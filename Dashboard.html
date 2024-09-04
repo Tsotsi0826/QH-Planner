@@ -112,10 +112,10 @@
     </div>
     <script>
         function showDetails(category) {
-            // Map of categories to their corresponding HTML files on GitHub Pages
+            // Map of categories to their corresponding HTML files
             const categoryFiles = {
                 'create-project': 'Create%20New%20Project.html', // Link to the Create New Project page
-                'current-projects': '',
+                'current-projects': 'current-projects.html', // Updated link to the Current Projects page
                 'upcoming-projects': '',
                 'todo-list': '',
                 'reminders': '',
@@ -129,7 +129,7 @@
             const file = categoryFiles[category];
 
             if (file) {
-                // Navigate to the corresponding HTML file on GitHub Pages
+                // Navigate to the corresponding HTML file
                 window.location.href = file;
             } else {
                 // Fallback alert for any categories without a corresponding file

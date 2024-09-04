@@ -194,10 +194,8 @@
                     <label for="user-name">User Name:</label>
                     <select id="user-name">
                         <option value="">Select User</option>
-                        <option value="User1">User1</option>
-                        <option value="User2">User2</option>
-                        <option value="User3">User3</option>
-                        <!-- Add more users as needed -->
+                        <option value="add-user">Add User</option>
+                        <!-- Users will be dynamically added here -->
                     </select>
                 </div>
                 <div class="form-group">
@@ -297,8 +295,8 @@
             const meetingDate = document.getElementById('meeting-date').value;
             const meetingTime = document.getElementById('meeting-time').value;
 
-            if (!userName) {
-                alert('Please select a user.');
+            if (!userName || userName === 'add-user') {
+                alert('Please select a valid user.');
                 return;
             }
             
@@ -321,6 +319,53 @@
                 .catch((error) => {
                     console.error('Error adding meeting: ', error);
                 });
+        });
+
+        // Load users from Firebase
+        function loadUsers() {
+            const usersRef = database.ref('users');
+            usersRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                const userNameSelect = document.getElementById('user-name');
+                
+                // Clear existing user options except the default ones
+                userNameSelect.innerHTML = '<option value="">Select User</option><option value="add-user">Add User</option>';
+                
+                for (let id in data) {
+                    const user = data[id];
+                    const option = document.createElement('option');
+                    option.value = user.name;
+                    option.textContent = user.name;
+                    userNameSelect.appendChild(option);
+                }
+            });
+        }
+
+        // Add new user
+        function addUser() {
+            const userName = prompt('Enter your name:');
+            if (userName) {
+                const usersRef = database.ref('users');
+                const newUserRef = usersRef.push();
+                newUserRef.set({ name: userName })
+                    .then(() => {
+                        console.log('User added successfully');
+                        loadUsers();
+                        document.getElementById('user-name').value = userName;
+                    })
+                    .catch((error) => {
+                        console.error('Error adding user: ', error);
+                    });
+            }
+        }
+
+        // Handle user selection change
+        document.getElementById('user-name').addEventListener('change', function() {
+            if (this.value === 'add-user') {
+                addUser();
+            } else {
+                loadMeetings();
+            }
         });
 
         // Load meetings from Firebase
@@ -402,11 +447,9 @@
             }
         }
 
-        // Load meetings when the page loads
+        // Load users and meetings when the page loads
+        loadUsers();
         loadMeetings();
-
-        // Reload meetings when the user changes
-        document.getElementById('user-name').addEventListener('change', loadMeetings);
     </script>
 </body>
 </html>

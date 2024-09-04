@@ -176,6 +176,13 @@
             font-weight: bold;
             color: var(--primary-color);
         }
+        #debug {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
     </style>
     <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -184,6 +191,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 <body>
+    <p id="debug">Debug: Page loaded</p>
+
     <h1>Meetings</h1>
     
     <div id="auth-container">
@@ -224,6 +233,9 @@
     </div>
 
     <script>
+        document.getElementById('debug').textContent += ' | Script started';
+        console.log('Script started');
+
         // Firebase configuration
         const firebaseConfig = {
             // Replace with your actual Firebase configuration
@@ -237,139 +249,78 @@
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialized successfully");
+            document.getElementById('debug').textContent += ' | Firebase initialized';
+        } catch (error) {
+            console.error("Error initializing Firebase:", error);
+            document.getElementById('debug').textContent += ' | Firebase init error';
+        }
 
-        // Get a reference to the database service
-        const database = firebase.database();
-        const auth = firebase.auth();
-
-        // Authentication state observer
-        firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-                // User is signed in
-                document.getElementById('login-btn').style.display = 'none';
-                document.getElementById('logout-btn').style.display = 'inline-block';
-                document.getElementById('user-email').textContent = user.email;
-                document.getElementById('content').style.display = 'flex';
-                loadMeetings(user.uid);
-            } else {
-                // User is signed out
-                document.getElementById('login-btn').style.display = 'inline-block';
-                document.getElementById('logout-btn').style.display = 'none';
-                document.getElementById('user-email').textContent = '';
-                document.getElementById('content').style.display = 'none';
-            }
-        });
+        // Check if Firebase Auth is available
+        if (firebase.auth) {
+            console.log("Firebase Auth is available");
+            document.getElementById('debug').textContent += ' | Auth available';
+            
+            // Authentication state observer
+            firebase.auth().onAuthStateChanged((user) => {
+                console.log("Auth state changed. User:", user);
+                if (user) {
+                    // User is signed in
+                    document.getElementById('login-btn').style.display = 'none';
+                    document.getElementById('logout-btn').style.display = 'inline-block';
+                    document.getElementById('user-email').textContent = user.email;
+                    document.getElementById('content').style.display = 'flex';
+                    loadMeetings(user.uid);
+                    document.getElementById('debug').textContent += ' | User signed in';
+                } else {
+                    // User is signed out
+                    document.getElementById('login-btn').style.display = 'inline-block';
+                    document.getElementById('logout-btn').style.display = 'none';
+                    document.getElementById('user-email').textContent = '';
+                    document.getElementById('content').style.display = 'none';
+                    document.getElementById('debug').textContent += ' | User signed out';
+                }
+            });
+        } else {
+            console.error("Firebase Auth is not available");
+            document.getElementById('debug').textContent += ' | Auth not available';
+        }
 
         // Login functionality
         document.getElementById('login-btn').addEventListener('click', () => {
+            console.log("Login button clicked");
             const provider = new firebase.auth.GoogleAuthProvider();
             firebase.auth().signInWithPopup(provider)
+                .then((result) => {
+                    console.log("Login successful:", result.user);
+                    document.getElementById('debug').textContent += ' | Login successful';
+                })
                 .catch((error) => {
                     console.error('Error during sign in', error);
+                    document.getElementById('debug').textContent += ' | Login error';
                 });
         });
 
         // Logout functionality
         document.getElementById('logout-btn').addEventListener('click', () => {
+            console.log("Logout button clicked");
             firebase.auth().signOut()
-                .catch((error) => {
-                    console.error('Error during sign out', error);
-                });
-        });
-
-        // Generate calendar
-        function generateCalendar(year, month) {
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const firstDay = new Date(year, month, 1).getDay();
-            
-            let calendarHTML = '<table><tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr><tr>';
-            
-            for (let i = 0; i < firstDay; i++) {
-                calendarHTML += '<td></td>';
-            }
-            
-            for (let day = 1; day <= daysInMonth; day++) {
-                if ((day + firstDay - 1) % 7 === 0) {
-                    calendarHTML += '</tr><tr>';
-                }
-                calendarHTML += `<td data-date="${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}">${day}<div class="meeting-dots"></div><div class="meeting-hover"></div></td>`;
-            }
-            
-            calendarHTML += '</tr></table>';
-            document.getElementById('calendar').innerHTML = calendarHTML;
-        }
-
-        // Update calendar with meetings
-        function updateCalendarWithMeetings(meetings) {
-            const cells = document.querySelectorAll('#calendar td');
-            cells.forEach(cell => {
-                const cellDate = cell.getAttribute('data-date');
-                const meetingsOnDay = meetings.filter(meeting => meeting.date === cellDate);
-                const dotsContainer = cell.querySelector('.meeting-dots');
-                const hoverContainer = cell.querySelector('.meeting-hover');
-                
-                dotsContainer.innerHTML = '';
-                hoverContainer.innerHTML = '';
-
-                if (meetingsOnDay.length > 0) {
-                    meetingsOnDay.forEach(meeting => {
-                        dotsContainer.innerHTML += '<span class="meeting-dot"></span>';
-                    });
-
-                    let hoverHTML = '<strong>Meetings:</strong><br>';
-                    meetingsOnDay.forEach(meeting => {
-                        hoverHTML += `${meeting.customerName} at ${meeting.time}<br>`;
-                    });
-                    hoverContainer.innerHTML = hoverHTML;
-
-                    cell.addEventListener('mouseover', () => {
-                        hoverContainer.style.display = 'block';
-                    });
-
-                    cell.addEventListener('mouseout', () => {
-                        hoverContainer.style.display = 'none';
-                    });
-                }
-            });
-        }
-
-        // Handle form submission
-        document.getElementById('new-meeting-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const user = firebase.auth().currentUser;
-            if (!user) {
-                alert('You must be logged in to create a meeting.');
-                return;
-            }
-            const customerName = document.getElementById('customer-name').value;
-            const meetingDate = document.getElementById('meeting-date').value;
-            const meetingTime = document.getElementById('meeting-time').value;
-            
-            // Create a new meeting object
-            const newMeeting = {
-                customerName: customerName,
-                date: meetingDate,
-                time: meetingTime,
-                userId: user.uid
-            };
-            
-            // Push the new meeting to Firebase
-            const newMeetingRef = database.ref('meetings').push();
-            newMeetingRef.set(newMeeting)
                 .then(() => {
-                    console.log('Meeting added successfully');
-                    this.reset();
-                    loadMeetings(user.uid);
+                    console.log("Logout successful");
+                    document.getElementById('debug').textContent += ' | Logout successful';
                 })
                 .catch((error) => {
-                    console.error('Error adding meeting: ', error);
+                    console.error('Error during sign out', error);
+                    document.getElementById('debug').textContent += ' | Logout error';
                 });
         });
 
         // Load meetings from Firebase
         function loadMeetings(userId) {
-            const meetingsRef = database.ref('meetings');
+            console.log("Loading meetings for user:", userId);
+            const meetingsRef = firebase.database().ref('meetings');
             meetingsRef.orderByChild('userId').equalTo(userId).on('value', (snapshot) => {
                 const data = snapshot.val();
                 const meetingsList = document.getElementById('meetings-list');
@@ -392,14 +343,47 @@
                     meetingsList.appendChild(meetingItem);
                 }
                 updateCalendarWithMeetings(meetings);
+                document.getElementById('debug').textContent += ' | Meetings loaded';
             });
         }
 
-        // Edit meeting
-        function editMeeting(id) {
-            const user = firebase.auth().currentUser;
-            if (!user) {
-                alert('You must be logged in to edit a meeting.');
-                return;
+        // Generate calendar
+        function generateCalendar(year, month) {
+            console.log("Generating calendar for", year, month);
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDay = new Date(year, month, 1).getDay();
+            
+            let calendarHTML = '<table><tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr><tr>';
+            
+            for (let i = 0; i < firstDay; i++) {
+                calendarHTML += '<td></td>';
             }
-            const meetingRef = database.ref('meetings/' + id);
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                if ((day + firstDay - 1) % 7 === 0) {
+                    calendarHTML += '</tr><tr>';
+                }
+                calendarHTML += `<td data-date="${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}">${day}<div class="meeting-dots"></div><div class="meeting-hover"></div></td>`;
+            }
+            
+            calendarHTML += '</tr></table>';
+            document.getElementById('calendar').innerHTML = calendarHTML;
+            document.getElementById('debug').textContent += ' | Calendar generated';
+        }
+
+        // Update calendar with meetings
+        function updateCalendarWithMeetings(meetings) {
+            console.log("Updating calendar with meetings:", meetings);
+            const cells = document.querySelectorAll('#calendar td');
+            cells.forEach(cell => {
+                const cellDate = cell.getAttribute('data-date');
+                const meetingsOnDay = meetings.filter(meeting => meeting.date === cellDate);
+                const dotsContainer = cell.querySelector('.meeting-dots');
+                const hoverContainer = cell.querySelector('.meeting-hover');
+                
+                dotsContainer.innerHTML = '';
+                hoverContainer.innerHTML = '';
+
+                if (meetingsOnDay.length > 0) {
+                    meetingsOnDay.forEach(meeting => {
+                        dotsContainer.innerHTML += '<span

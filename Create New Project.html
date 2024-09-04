@@ -176,18 +176,26 @@
             background-color: #e8f5e9;
             color: #2e7d32;
         }
+        .back-button {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .back-button:hover {
+            background-color: var(--hover-color);
+        }
     </style>
 </head>
 <body>
     <div class="container animated">
+        <a href="index.html" class="back-button">Back to Dashboard</a>
+        
         <div class="button-group">
-            <a href="dashboard.html" class="button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                </svg>
-                Dashboard
-            </a>
             <button type="submit" class="button save" form="createProjectForm">Save Project</button>
         </div>
 

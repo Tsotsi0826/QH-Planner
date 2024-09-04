@@ -254,7 +254,25 @@
         </form>
     </div>
     
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
     <script>
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyD82WxYqaYASCiTmcBd7nHHZMTsAJSZkIc",
+      authDomain: "qh-planner.firebaseapp.com",
+      databaseURL: "https://qh-planner-default-rtdb.firebaseio.com",
+      projectId: "qh-planner",
+      storageBucket: "qh-planner.appspot.com",
+      messagingSenderId: "847763991357",
+      appId: "1:847763991357:web:9dda19dfee4dac66a5f354"
+    };
+    
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('createProjectForm');
         const saveButton = document.querySelector('.button.save');
@@ -271,22 +289,15 @@
             setLoading(true);
 
             try {
-                const response = await fetch('https://script.google.com/macros/s/AKfycbz2vQQR6ChLMM8mxhgddBzbNgvVCdg2V4u8dHXVul6JKqv8CdsZfyrfpjxs5dbO064_kw/exec', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(projectData),
-                });
+                // Get a reference to the database service
+                const database = firebase.database();
+                
+                // Push the project data to Firebase
+                const newProjectRef = database.ref('projects').push();
+                await newProjectRef.set(projectData);
 
-                const result = await response.json();
-
-                if (result.message === 'Data added successfully') {
-                    showMessage('Project saved successfully!', 'success');
-                    form.reset(); // Clear the form after successful save
-                } else {
-                    throw new Error(result.message || 'Unknown error occurred');
-                }
+                showMessage('Project saved successfully!', 'success');
+                form.reset(); // Clear the form after successful save
             } catch (error) {
                 console.error('Error saving data:', error);
                 showMessage('Error saving data. Please try again.', 'error');

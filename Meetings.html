@@ -171,6 +171,10 @@
             text-align: center;
             margin-bottom: 20px;
         }
+        #new-user-form {
+            display: none;
+            margin-top: 10px;
+        }
     </style>
     <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -181,16 +185,17 @@
     <h1>Meetings</h1>
     
     <div id="user-selector">
-        <label for="user-select">Select User:</label>
         <select id="user-select">
-            <option value="">-- Select a user --</option>
-            <option value="user1">User 1</option>
-            <option value="user2">User 2</option>
-            <option value="user3">User 3</option>
+            <option value="">Select a user</option>
+            <option value="add-new">Add new user</option>
         </select>
+        <div id="new-user-form">
+            <input type="text" id="new-user-name" placeholder="Enter new user name">
+            <button id="add-user-btn">Add User</button>
+        </div>
     </div>
 
-    <div class="container" id="content" style="display: none;">
+    <div class="container">
         <div class="calendar-container">
             <h2>Calendar</h2>
             <div id="calendar">
@@ -224,14 +229,8 @@
     <script>
         // Firebase configuration
         const firebaseConfig = {
-            // Replace with your actual Firebase configuration
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
+            // You need to replace this with your actual Firebase configuration
             databaseURL: "https://qh-planner-default-rtdb.firebaseio.com/",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
         };
 
         // Initialize Firebase
@@ -242,76 +241,55 @@
 
         let currentUser = null;
 
-        // User selection functionality
-        document.getElementById('user-select').addEventListener('change', function() {
-            currentUser = this.value;
-            if (currentUser) {
-                document.getElementById('content').style.display = 'flex';
-                loadMeetings(currentUser);
-            } else {
-                document.getElementById('content').style.display = 'none';
-            }
-        });
-
-        // Handle form submission
-        document.getElementById('new-meeting-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            if (!currentUser) {
-                alert('Please select a user before creating a meeting.');
-                return;
-            }
-            const customerName = document.getElementById('customer-name').value;
-            const meetingDate = document.getElementById('meeting-date').value;
-            const meetingTime = document.getElementById('meeting-time').value;
-            
-            // Create a new meeting object
-            const newMeeting = {
-                customerName: customerName,
-                date: meetingDate,
-                time: meetingTime,
-                userId: currentUser
-            };
-            
-            // Push the new meeting to Firebase
-            const newMeetingRef = database.ref('meetings').push();
-            newMeetingRef.set(newMeeting)
-                .then(() => {
-                    console.log('Meeting added successfully');
-                    this.reset();
-                    loadMeetings(currentUser);
-                })
-                .catch((error) => {
-                    console.error('Error adding meeting: ', error);
-                });
-        });
-
-        // Load meetings from Firebase
-        function loadMeetings(userId) {
-            const meetingsRef = database.ref('meetings');
-            meetingsRef.orderByChild('userId').equalTo(userId).on('value', (snapshot) => {
+        // Load users from Firebase
+        function loadUsers() {
+            const usersRef = database.ref('users');
+            usersRef.on('value', (snapshot) => {
                 const data = snapshot.val();
-                const meetingsList = document.getElementById('meetings-list');
-                meetingsList.innerHTML = '<h3>Upcoming Meetings</h3>';
-                const meetings = [];
-                for (let id in data) {
-                    const meeting = data[id];
-                    meeting.id = id;
-                    meetings.push(meeting);
-                    const meetingItem = document.createElement('div');
-                    meetingItem.className = 'meeting-item';
-                    meetingItem.innerHTML = `
-                        <strong>${meeting.customerName}</strong><br>
-                        ${meeting.date} at ${meeting.time}
-                        <div class="meeting-actions">
-                            <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
-                            <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
-                        </div>
-                    `;
-                    meetingsList.appendChild(meetingItem);
+                const userSelect = document.getElementById('user-select');
+                // Clear existing options except the first two
+                while (userSelect.options.length > 2) {
+                    userSelect.remove(2);
                 }
-                updateCalendarWithMeetings(meetings);
+                for (let id in data) {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = data[id].name;
+                    userSelect.appendChild(option);
+                }
             });
         }
+
+        // Handle user selection
+        document.getElementById('user-select').addEventListener('change', function() {
+            if (this.value === 'add-new') {
+                document.getElementById('new-user-form').style.display = 'block';
+            } else {
+                document.getElementById('new-user-form').style.display = 'none';
+                currentUser = this.value;
+                if (currentUser) {
+                    loadMeetings();
+                }
+            }
+        });
+
+        // Handle adding new user
+        document.getElementById('add-user-btn').addEventListener('click', function() {
+            const newUserName = document.getElementById('new-user-name').value.trim();
+            if (newUserName) {
+                const newUserRef = database.ref('users').push();
+                newUserRef.set({ name: newUserName })
+                    .then(() => {
+                        console.log('User added successfully');
+                        document.getElementById('new-user-name').value = '';
+                        document.getElementById('new-user-form').style.display = 'none';
+                        loadUsers();
+                    })
+                    .catch((error) => {
+                        console.error('Error adding user: ', error);
+                    });
+            }
+        });
 
         // Generate calendar
         function generateCalendar(year, month) {
@@ -369,39 +347,74 @@
             });
         }
 
-        // Edit meeting
-        function editMeeting(id) {
-            const meetingRef = database.ref('meetings/' + id);
-            meetingRef.once('value').then((snapshot) => {
-                const meeting = snapshot.val();
-                document.getElementById('customer-name').value = meeting.customerName;
-                document.getElementById('meeting-date').value = meeting.date;
-                document.getElementById('meeting-time').value = meeting.time;
-                
-                // Change form submission to update instead of create
-                const form = document.getElementById('new-meeting-form');
-                form.onsubmit = function(e) {
-                    e.preventDefault();
-                    const updatedMeeting = {
-                        customerName: document.getElementById('customer-name').value,
-                        date: document.getElementById('meeting-date').value,
-                        time: document.getElementById('meeting-time').value,
-                        userId: currentUser
-                    };
-                    meetingRef.update(updatedMeeting)
-                        .then(() => {
-                            console.log('Meeting updated successfully');
-                            form.reset();
-                            form.onsubmit = null; // Reset form submission to create new meetings
-                            loadMeetings(currentUser);
-                        })
-                        .catch((error) => {
-                            console.error('Error updating meeting: ', error);
-                        });
-                };
+        // Generate current month's calendar
+        const currentDate = new Date();
+        generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+
+        // Handle form submission
+        document.getElementById('new-meeting-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!currentUser) {
+                alert('Please select a user before creating a meeting.');
+                return;
+            }
+            const customerName = document.getElementById('customer-name').value;
+            const meetingDate = document.getElementById('meeting-date').value;
+            const meetingTime = document.getElementById('meeting-time').value;
+            
+            // Create a new meeting object
+            const newMeeting = {
+                customerName: customerName,
+                date: meetingDate,
+                time: meetingTime,
+                userId: currentUser
+            };
+            
+            // Push the new meeting to Firebase
+            const newMeetingRef = database.ref('meetings').push();
+            newMeetingRef.set(newMeeting)
+                .then(() => {
+                    console.log('Meeting added successfully');
+                    // Clear the form
+                    this.reset();
+                    // Refresh the meetings list and calendar
+                    loadMeetings();
+                })
+                .catch((error) => {
+                    console.error('Error adding meeting: ', error);
+                });
+        });
+
+        // Load meetings from Firebase
+        function loadMeetings() {
+            if (!currentUser) return;
+            const meetingsRef = database.ref('meetings');
+            meetingsRef.orderByChild('userId').equalTo(currentUser).on('value', (snapshot) => {
+                const data = snapshot.val();
+                const meetingsList = document.getElementById('meetings-list');
+                meetingsList.innerHTML = '<h3>Upcoming Meetings</h3>';
+                const meetings = [];
+                for (let id in data) {
+                    const meeting = data[id];
+                    meeting.id = id;
+                    meetings.push(meeting);
+                    const meetingItem = document.createElement('div');
+                    meetingItem.className = 'meeting-item';
+                    meetingItem.innerHTML = `
+                        <strong>${meeting.customerName}</strong><br>
+                        ${meeting.date} at ${meeting.time}
+                        <div class="meeting-actions">
+                            <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
+                            <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
+                        </div>
+                    `;
+                    meetingsList.appendChild(meetingItem);
+                }
+                // Update calendar with meetings
+                updateCalendarWithMeetings(meetings);
             });
         }
 
-        // Delete meeting
-        function deleteMeeting(id) {
-            if (confirm('Are
+        // Edit meeting
+        function editMeeting(id) {
+            const

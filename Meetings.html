@@ -165,16 +165,34 @@
         .edit-btn:hover, .delete-btn:hover {
             opacity: 0.8;
         }
+        #auth-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #auth-container button {
+            margin: 0 10px;
+        }
+        #user-email {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
     </style>
     <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <!-- Add Firebase products that you want to use -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 <body>
     <h1>Meetings</h1>
     
-    <div class="container">
+    <div id="auth-container">
+        <button id="login-btn" style="display: none;">Login</button>
+        <button id="logout-btn" style="display: none;">Logout</button>
+        <span id="user-email"></span>
+    </div>
+
+    <div class="container" id="content" style="display: none;">
         <div class="calendar-container">
             <h2>Calendar</h2>
             <div id="calendar">
@@ -208,8 +226,14 @@
     <script>
         // Firebase configuration
         const firebaseConfig = {
-            // You need to replace this with your actual Firebase configuration
+            // Replace with your actual Firebase configuration
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
             databaseURL: "https://qh-planner-default-rtdb.firebaseio.com/",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         // Initialize Firebase
@@ -217,6 +241,42 @@
 
         // Get a reference to the database service
         const database = firebase.database();
+        const auth = firebase.auth();
+
+        // Authentication state observer
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in
+                document.getElementById('login-btn').style.display = 'none';
+                document.getElementById('logout-btn').style.display = 'inline-block';
+                document.getElementById('user-email').textContent = user.email;
+                document.getElementById('content').style.display = 'flex';
+                loadMeetings(user.uid);
+            } else {
+                // User is signed out
+                document.getElementById('login-btn').style.display = 'inline-block';
+                document.getElementById('logout-btn').style.display = 'none';
+                document.getElementById('user-email').textContent = '';
+                document.getElementById('content').style.display = 'none';
+            }
+        });
+
+        // Login functionality
+        document.getElementById('login-btn').addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider)
+                .catch((error) => {
+                    console.error('Error during sign in', error);
+                });
+        });
+
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            firebase.auth().signOut()
+                .catch((error) => {
+                    console.error('Error during sign out', error);
+                });
+        });
 
         // Generate calendar
         function generateCalendar(year, month) {
@@ -274,13 +334,14 @@
             });
         }
 
-        // Generate current month's calendar
-        const currentDate = new Date();
-        generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
-
         // Handle form submission
         document.getElementById('new-meeting-form').addEventListener('submit', function(e) {
             e.preventDefault();
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                alert('You must be logged in to create a meeting.');
+                return;
+            }
             const customerName = document.getElementById('customer-name').value;
             const meetingDate = document.getElementById('meeting-date').value;
             const meetingTime = document.getElementById('meeting-time').value;
@@ -289,7 +350,8 @@
             const newMeeting = {
                 customerName: customerName,
                 date: meetingDate,
-                time: meetingTime
+                time: meetingTime,
+                userId: user.uid
             };
             
             // Push the new meeting to Firebase
@@ -297,10 +359,8 @@
             newMeetingRef.set(newMeeting)
                 .then(() => {
                     console.log('Meeting added successfully');
-                    // Clear the form
                     this.reset();
-                    // Refresh the meetings list and calendar
-                    loadMeetings();
+                    loadMeetings(user.uid);
                 })
                 .catch((error) => {
                     console.error('Error adding meeting: ', error);
@@ -308,9 +368,9 @@
         });
 
         // Load meetings from Firebase
-        function loadMeetings() {
+        function loadMeetings(userId) {
             const meetingsRef = database.ref('meetings');
-            meetingsRef.on('value', (snapshot) => {
+            meetingsRef.orderByChild('userId').equalTo(userId).on('value', (snapshot) => {
                 const data = snapshot.val();
                 const meetingsList = document.getElementById('meetings-list');
                 meetingsList.innerHTML = '<h3>Upcoming Meetings</h3>';
@@ -331,60 +391,15 @@
                     `;
                     meetingsList.appendChild(meetingItem);
                 }
-                // Update calendar with meetings
                 updateCalendarWithMeetings(meetings);
             });
         }
 
         // Edit meeting
         function editMeeting(id) {
-            const meetingRef = database.ref('meetings/' + id);
-            meetingRef.once('value').then((snapshot) => {
-                const meeting = snapshot.val();
-                document.getElementById('customer-name').value = meeting.customerName;
-                document.getElementById('meeting-date').value = meeting.date;
-                document.getElementById('meeting-time').value = meeting.time;
-                
-                // Change form submission to update instead of create
-                const form = document.getElementById('new-meeting-form');
-                form.onsubmit = function(e) {
-                    e.preventDefault();
-                    const updatedMeeting = {
-                        customerName: document.getElementById('customer-name').value,
-                        date: document.getElementById('meeting-date').value,
-                        time: document.getElementById('meeting-time').value
-                    };
-                    meetingRef.update(updatedMeeting)
-                        .then(() => {
-                            console.log('Meeting updated successfully');
-                            form.reset();
-                            form.onsubmit = null; // Reset form submission to create new meetings
-                            loadMeetings();
-                        })
-                        .catch((error) => {
-                            console.error('Error updating meeting: ', error);
-                        });
-                };
-            });
-        }
-
-        // Delete meeting
-        function deleteMeeting(id) {
-            if (confirm('Are you sure you want to delete this meeting?')) {
-                const meetingRef = database.ref('meetings/' + id);
-                meetingRef.remove()
-                    .then(() => {
-                        console.log('Meeting deleted successfully');
-                        loadMeetings();
-                    })
-                    .catch((error) => {
-                        console.error('Error deleting meeting: ', error);
-                    });
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                alert('You must be logged in to edit a meeting.');
+                return;
             }
-        }
-
-        // Load meetings when the page loads
-        loadMeetings();
-    </script>
-</body>
-</html>
+            const meetingRef = database.ref('meetings/' + id);

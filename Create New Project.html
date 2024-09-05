@@ -320,7 +320,6 @@
 
             try {
                 const database = firebase.database();
-                
                 const newProjectRef = database.ref('projects').push();
                 await newProjectRef.set(projectData);
 
@@ -350,28 +349,48 @@
         function loadClients() {
             const clientsList = document.getElementById('clientsList');
             clientsList.innerHTML = ''; // Clear existing list
+
+            // Reference to the 'projects' path in your Firebase Realtime Database
             const clientsRef = firebase.database().ref('projects');
-            clientsRef.on('value', (snapshot) => {  // Changed to 'on' to listen for real-time updates
-                const data = snapshot.val();
-                clientsList.innerHTML = ''; // Clear existing list each time data changes
-                for (const key in data) {
-                    const client = data[key];
-                    const clientItem = document.createElement('div');
-                    clientItem.className = 'client-item';
-                    clientItem.innerHTML = `
-                        <span>${client.clientName} ${client.clientSurname} - ${client.clientCell}</span>
-                        <div class="client-icons">
-                            <i class="fas fa-arrow-right" title="Move to Current Project"></i>
-                            <i class="fas fa-calendar-alt" title="Move to Upcoming Project"></i>
-                            <i class="fas fa-trash-alt" title="Delete"></i>
-                        </div>
-                    `;
-                    clientsList.appendChild(clientItem);
+            
+            // Listen for changes in the 'projects' path
+            clientsRef.on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    clientsList.innerHTML = ''; // Clear existing list each time data changes
+
+                    // Iterate through each project in the snapshot
+                    for (const key in data) {
+                        const client = data[key];
+
+                        // Check if required fields are available in each project
+                        if (client.clientName && client.clientSurname && client.clientCell) {
+                            const clientItem = document.createElement('div');
+                            clientItem.className = 'client-item';
+                            clientItem.innerHTML = `
+                                <span>${client.clientName} ${client.clientSurname} - ${client.clientCell}</span>
+                                <div class="client-icons">
+                                    <i class="fas fa-arrow-right" title="Move to Current Project"></i>
+                                    <i class="fas fa-calendar-alt" title="Move to Upcoming Project"></i>
+                                    <i class="fas fa-trash-alt" title="Delete"></i>
+                                </div>
+                            `;
+                            clientsList.appendChild(clientItem);
+                        } else {
+                            console.warn('Client data missing required fields:', client);
+                        }
+                    }
+                } else {
+                    clientsList.innerHTML = '<p>No clients found.</p>'; // Show a message if no data is found
                 }
+            }, (error) => {
+                console.error('Error fetching data from Firebase:', error);
+                showMessage('Error loading clients. Please check your connection.', 'error');
             });
         }
 
-        loadClients(); // Initialize loading of clients on page load
+        // Initialize loading of clients on page load
+        loadClients();
     });
     </script>
 </body>

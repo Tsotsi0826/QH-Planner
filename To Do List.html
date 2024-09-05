@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List & Reminders</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --background-color: #f5f7fa;
+            --tile-color: #ffffff;
+            --text-color: #34495e;
+            --delete-color: #e74c3c;
+            --edit-color: #f39c12;
+            --complete-color: #2ecc71;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            color: var(--primary-color);
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .todo-section, .reminders-section {
+            background-color: var(--tile-color);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .todo-section h2, .reminders-section h2 {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        .form-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        input[type="text"], input[type="date"], input[type="time"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--secondary-color);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #27ae60;
+        }
+        .task-list, .reminder-list {
+            list-style: none;
+            padding: 0;
+        }
+        .task-item, .reminder-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .task-title, .reminder-title {
+            flex: 1;
+        }
+        .task-actions, .reminder-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .edit-btn, .delete-btn, .complete-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .edit-btn {
+            background-color: var(--edit-color);
+            color: white;
+        }
+        .delete-btn {
+            background-color: var(--delete-color);
+            color: white;
+        }
+        .complete-btn {
+            background-color: var(--complete-color);
+            color: white;
+        }
+        .edit-btn:hover {
+            background-color: #e67e22;
+        }
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+        .complete-btn:hover {
+            background-color: #27ae60;
+        }
+        .calendar {
+            margin-top: 20px;
+        }
+        .calendar table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #ddd;
+        }
+        .calendar th, .calendar td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .calendar th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>To-Do List & Reminders</h1>
+    <div class="container">
+        <div class="todo-section">
+            <h2>To-Do List</h2>
+            <div class="form-group">
+                <input type="text" id="task-input" placeholder="Enter a new task">
+                <button onclick="addTask()">Add Task</button>
+            </div>
+            <ul class="task-list" id="task-list">
+                <!-- Tasks will be dynamically added here -->
+            </ul>
+        </div>
+        <div class="reminders-section">
+            <h2>Reminders</h2>
+            <div class="form-group">
+                <input type="text" id="reminder-input" placeholder="Reminder Title">
+                <input type="date" id="reminder-date">
+                <input type="time" id="reminder-time">
+                <button onclick="addReminder()">Set Reminder</button>
+            </div>
+            <ul class="reminder-list" id="reminder-list">
+                <!-- Reminders will be dynamically added here -->
+            </ul>
+            <div class="calendar">
+                <h2>Calendar</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sun</th>
+                            <th>Mon</th>
+                            <th>Tue</th>
+                            <th>Wed</th>
+                            <th>Thu</th>
+                            <th>Fri</th>
+                            <th>Sat</th>
+                        </tr>
+                    </thead>
+                    <tbody id="calendar-body">
+                        <!-- Calendar will be dynamically generated -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Task List Functions
+        function addTask() {
+            const taskInput = document.getElementById('task-input');
+            const taskList = document.getElementById('task-list');
+            const taskTitle = taskInput.value.trim();
+            
+            if (taskTitle === '') {
+                alert('Please enter a task.');
+                return;
+            }
+
+            const taskItem = document.createElement('li');
+            taskItem.className = 'task-item';
+            taskItem.innerHTML = `
+                <span class="task-title">${taskTitle}</span>
+                <div class="task-actions">
+                    <button class="complete-btn" onclick="completeTask(this)">Complete</button>
+                    <button class="edit-btn" onclick="editTask(this)">Edit</button>
+                    <button class="delete-btn" onclick="deleteTask(this)">Delete</button>
+                </div>
+            `;
+            taskList.appendChild(taskItem);
+            taskInput.value = '';
+        }
+
+        function completeTask(button) {
+            const taskItem = button.closest('.task-item');
+            taskItem.classList.toggle('completed');
+            button.textContent = taskItem.classList.contains('completed') ? 'Undo' : 'Complete';
+        }
+
+        function editTask(button) {
+            const taskItem = button.closest('.task-item');
+            const taskTitle = taskItem.querySelector('.task-title');
+            const newTitle = prompt('Edit Task', taskTitle.textContent);
+            if (newTitle) {
+                taskTitle.textContent = newTitle;
+            }
+        }
+
+        function deleteTask(button) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                const taskItem = button.closest('.task-item');
+                taskItem.remove();
+            }
+        }
+
+        // Reminders Functions
+        function addReminder() {
+            const reminderInput = document.getElementById('reminder-input');
+            const reminderDate = document.getElementById('reminder-date').value;
+            const reminderTime = document.getElementById('reminder-time').value;
+            const reminderList = document.getElementById('reminder-list');
+            const reminderTitle = reminderInput.value.trim();
+            
+            if (!reminderTitle || !reminderDate || !reminderTime) {
+                alert('Please fill in all reminder fields.');
+                return;
+            }
+
+            const reminderItem = document.createElement('li');
+            reminderItem.className = 'reminder-item';
+            reminderItem.innerHTML = `
+                <span class="reminder-title">${reminderTitle} - ${reminderDate} at ${reminderTime}</span>
+                <div class="reminder-actions">
+                    <button class="delete-btn" onclick="deleteReminder(this)">Delete</button>
+                </div>
+            `;
+            reminderList.appendChild(reminderItem);
+            reminderInput.value = '';
+            document.getElementById('reminder-date').value = '';
+            document.getElementById('reminder-time').value = '';
+        }
+
+        function deleteReminder(button) {
+            if (confirm('Are you sure you want to delete this reminder?')) {
+                const reminderItem = button.closest('.reminder-item');
+                reminderItem.remove();
+            }
+        }
+
+        // Calendar Generation
+        function generateCalendar() {
+            const calendarBody = document.getElementById('calendar-body');
+            const date = new Date();
+            const currentMonth = date.getMonth();
+            const currentYear = date.getFullYear();
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            let row = document.createElement('tr');
+            for (let i = 0; i < firstDay; i++) {
+                row.appendChild(document.createElement('td'));
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                if (row.children.length === 7) {
+                    calendarBody.appendChild(row);
+                    row = document.createElement('tr');
+                }
+                const cell = document.createElement('td');
+                cell.textContent = day;
+                row.appendChild(cell);
+            }
+
+            calendarBody.appendChild(row);
+        }
+
+        // Initialize Calendar
+        generateCalendar();
+    </script>
+</body>
+</html>

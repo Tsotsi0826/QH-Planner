@@ -71,6 +71,16 @@
         .create-project .tile-title {
             color: white;
         }
+        /* Media Query for Responsive Layout */
+        @media (max-width: 768px) {
+            .dashboard {
+                flex-direction: column;
+                align-items: center;
+            }
+            .tile {
+                width: 80%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -108,12 +118,12 @@
     </div>
     <script>
         function showDetails(category) {
-            // Map of categories to their corresponding HTML files
+            // Map of categories to their corresponding HTML files on GitHub
             const categoryFiles = {
                 'create-project': 'Create%20New%20Project.html', // Link to the Create New Project page
                 'current-projects': 'Current%20Projects.html', // Updated link to the Current Projects page
                 'upcoming-projects': '', // To be implemented
-                'todo-list': '', // To be implemented
+                'todo-list': 'https://github.com/yourusername/yourrepository/blob/main/To%20Do%20List.html', // Link to the To-Do List & Reminders page on GitHub
                 'meetings': 'Meetings.html', // Updated link to the Meetings page
                 'calendar-view': '', // To be implemented
                 'quotes': '' // To be implemented

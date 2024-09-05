@@ -5,147 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>To-Do List & Reminders</title>
     <style>
-        :root {
-            --primary-color: #3498db;
-            --secondary-color: #2ecc71;
-            --background-color: #ffffff;
-            --tile-color: #ffffff;
-            --text-color: #34495e;
-            --delete-color: #e74c3c;
-            --edit-color: #f39c12;
-            --complete-color: #2ecc71;
-        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: var(--background-color);
-            color: var(--text-color);
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 2.5em;
-            color: var(--primary-color);
+            background-color: #f0f0f0;
         }
         .container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            display: flex;
+            justify-content: space-between;
             max-width: 1200px;
             margin: 0 auto;
         }
-        .todo-section, .reminders-section, .calendar-section {
-            background-color: var(--tile-color);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+        .column {
+            width: 48%;
         }
         h2 {
-            font-size: 1.8em;
-            margin-bottom: 15px;
-            color: var(--primary-color);
+            color: #333;
         }
         .form-group {
-            display: flex;
-            gap: 10px;
             margin-bottom: 15px;
         }
         input[type="text"], input[type="date"], input[type="time"] {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 5px;
+            margin-right: 5px;
         }
         button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            background-color: var(--secondary-color);
+            padding: 5px 10px;
+            background-color: #4CAF50;
             color: white;
+            border: none;
             cursor: pointer;
-            transition: background-color 0.3s;
         }
         button:hover {
-            background-color: #27ae60;
+            background-color: #45a049;
         }
-        .todo-list, .reminder-list {
-            list-style: none;
-            padding: 0;
+        .calendar {
+            margin-top: 20px;
         }
-        .todo-item, .reminder-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #f9f9f9;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .todo-title, .reminder-title {
-            flex: 1;
-        }
-        .todo-actions, .reminder-actions {
-            display: flex;
-            gap: 8px;
-        }
-        .edit-btn, .delete-btn, .complete-btn {
-            padding: 5px 10px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.9em;
-        }
-        .edit-btn {
-            background-color: var(--edit-color);
-            color: white;
-        }
-        .delete-btn {
-            background-color: var(--delete-color);
-            color: white;
-        }
-        .complete-btn {
-            background-color: var(--complete-color);
-            color: white;
-        }
-        .calendar table {
+        table {
             width: 100%;
             border-collapse: collapse;
         }
-        .calendar th, .calendar td {
+        th, td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: center;
         }
-        .calendar th {
-            background-color: var(--primary-color);
-            color: white;
+        th {
+            background-color: #f2f2f2;
         }
-        .calendar td {
-            position: relative;
-            cursor: pointer;
-        }
-        .calendar td:hover::after {
-            content: attr(data-info);
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #333;
-            color: white;
-            padding: 5px;
-            border-radius: 3px;
-            white-space: pre-wrap;
-            z-index: 1;
-            max-width: 200px;
-        }
-        .calendar td .dot {
+        .dot {
             height: 8px;
             width: 8px;
-            background-color: #3498db;
+            background-color: #4CAF50;
             border-radius: 50%;
             display: inline-block;
             margin-left: 2px;
@@ -153,48 +66,41 @@
     </style>
 </head>
 <body>
-    <h1>To-Do List & Reminders</h1>
     <div class="container">
         <div class="column">
-            <div class="todo-section">
-                <h2>To-Do List</h2>
-                <div class="form-group">
-                    <input type="text" id="todo-input" placeholder="Enter a new task">
-                    <input type="date" id="todo-date">
-                    <input type="time" id="todo-time">
-                    <button onclick="addTodo()">Add Task</button>
-                </div>
-                <ul class="todo-list" id="todo-list"></ul>
+            <h2>To-Do List</h2>
+            <div class="form-group">
+                <input type="text" id="todo-input" placeholder="Enter a new task">
+                <input type="date" id="todo-date">
+                <input type="time" id="todo-time">
+                <button onclick="addTodo()">Add Task</button>
             </div>
-            <div class="calendar-section">
+            <ul id="todo-list"></ul>
+            <div class="calendar">
                 <h2>Calendar</h2>
-                <div class="calendar" id="calendar-1"></div>
+                <div id="calendar-1"></div>
             </div>
         </div>
         <div class="column">
-            <div class="reminders-section">
-                <h2>Reminders</h2>
-                <div class="form-group">
-                    <input type="text" id="reminder-input" placeholder="Reminder Title">
-                    <input type="date" id="reminder-date">
-                    <input type="time" id="reminder-time">
-                    <button onclick="addReminder()">Set Reminder</button>
-                </div>
-                <ul class="reminder-list" id="reminder-list"></ul>
+            <h2>Reminders</h2>
+            <div class="form-group">
+                <input type="text" id="reminder-input" placeholder="Reminder Title">
+                <input type="date" id="reminder-date">
+                <input type="time" id="reminder-time">
+                <button onclick="addReminder()">Set Reminder</button>
             </div>
-            <div class="calendar-section">
+            <ul id="reminder-list"></ul>
+            <div class="calendar">
                 <h2>Calendar</h2>
-                <div class="calendar" id="calendar-2"></div>
+                <div id="calendar-2"></div>
             </div>
         </div>
     </div>
 
     <script type="module">
-        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyD82WxYqaYASCiTmcBd7nHHZMTsAJSZkIc",
             authDomain: "qh-planner.firebaseapp.com",
@@ -205,75 +111,26 @@
             appId: "1:847763991357:web:9dda19dfee4dac66a5f354"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        let todos = {};
-        let reminders = {};
+        window.todos = {};
+        window.reminders = {};
 
         function loadData() {
             const todosRef = ref(database, 'todos');
             onValue(todosRef, (snapshot) => {
-                todos = snapshot.val() || {};
+                window.todos = snapshot.val() || {};
                 updateTodoList();
                 updateCalendars();
             });
 
             const remindersRef = ref(database, 'reminders');
             onValue(remindersRef, (snapshot) => {
-                reminders = snapshot.val() || {};
+                window.reminders = snapshot.val() || {};
                 updateReminderList();
                 updateCalendars();
             });
-        }
-
-        function updateTodoList() {
-            const todoList = document.getElementById('todo-list');
-            todoList.innerHTML = '';
-            Object.keys(todos).forEach(date => {
-                todos[date].forEach(todo => {
-                    const todoItem = createTodoItem(todo, date);
-                    todoList.appendChild(todoItem);
-                });
-            });
-        }
-
-        function updateReminderList() {
-            const reminderList = document.getElementById('reminder-list');
-            reminderList.innerHTML = '';
-            Object.keys(reminders).forEach(date => {
-                reminders[date].forEach(reminder => {
-                    const reminderItem = createReminderItem(reminder, date);
-                    reminderList.appendChild(reminderItem);
-                });
-            });
-        }
-
-        function createTodoItem(todo, date) {
-            const todoItem = document.createElement('li');
-            todoItem.className = 'todo-item';
-            todoItem.innerHTML = `
-                <span class="todo-title">${todo.title} - ${date}${todo.time ? ' at ' + todo.time : ''}</span>
-                <div class="todo-actions">
-                    <button class="complete-btn" onclick="completeTodo('${date}', '${todo.title}')">Complete</button>
-                    <button class="edit-btn" onclick="editTodo('${date}', '${todo.title}')">Edit</button>
-                    <button class="delete-btn" onclick="deleteTodo('${date}', '${todo.title}')">Delete</button>
-                </div>
-            `;
-            return todoItem;
-        }
-
-        function createReminderItem(reminder, date) {
-            const reminderItem = document.createElement('li');
-            reminderItem.className = 'reminder-item';
-            reminderItem.innerHTML = `
-                <span class="reminder-title">${reminder.title} - ${date} at ${reminder.time}</span>
-                <div class="reminder-actions">
-                    <button class="delete-btn" onclick="deleteReminder('${date}', '${reminder.title}')">Delete</button>
-                </div>
-            `;
-            return reminderItem;
         }
 
         window.addTodo = function() {
@@ -287,46 +144,17 @@
                 return;
             }
 
-            if (!todos[todoDate]) {
-                todos[todoDate] = [];
+            if (!window.todos[todoDate]) {
+                window.todos[todoDate] = [];
             }
-            todos[todoDate].push({ title: todoTitle, time: todoTime });
+            window.todos[todoDate].push({ title: todoTitle, time: todoTime });
 
             const todosRef = ref(database, 'todos');
-            set(todosRef, todos);
+            set(todosRef, window.todos);
 
             todoInput.value = '';
             document.getElementById('todo-date').value = '';
             document.getElementById('todo-time').value = '';
-        }
-
-        window.completeTodo = function(date, title) {
-            // Implement completion logic here
-            // For example, you could add a 'completed' flag to the todo object
-            updateCalendars();
-        }
-
-        window.editTodo = function(date, title) {
-            const newTitle = prompt('Edit Task', title);
-            if (newTitle && newTitle !== title) {
-                const index = todos[date].findIndex(todo => todo.title === title);
-                if (index !== -1) {
-                    todos[date][index].title = newTitle;
-                    const todosRef = ref(database, 'todos');
-                    set(todosRef, todos);
-                }
-            }
-        }
-
-        window.deleteTodo = function(date, title) {
-            if (confirm('Are you sure you want to delete this task?')) {
-                todos[date] = todos[date].filter(todo => todo.title !== title);
-                if (todos[date].length === 0) {
-                    delete todos[date];
-                }
-                const todosRef = ref(database, 'todos');
-                set(todosRef, todos);
-            }
         }
 
         window.addReminder = function() {
@@ -340,28 +168,41 @@
                 return;
             }
 
-            if (!reminders[reminderDate]) {
-                reminders[reminderDate] = [];
+            if (!window.reminders[reminderDate]) {
+                window.reminders[reminderDate] = [];
             }
-            reminders[reminderDate].push({ title: reminderTitle, time: reminderTime });
+            window.reminders[reminderDate].push({ title: reminderTitle, time: reminderTime });
 
             const remindersRef = ref(database, 'reminders');
-            set(remindersRef, reminders);
+            set(remindersRef, window.reminders);
 
             reminderInput.value = '';
             document.getElementById('reminder-date').value = '';
             document.getElementById('reminder-time').value = '';
         }
 
-        window.deleteReminder = function(date, title) {
-            if (confirm('Are you sure you want to delete this reminder?')) {
-                reminders[date] = reminders[date].filter(reminder => reminder.title !== title);
-                if (reminders[date].length === 0) {
-                    delete reminders[date];
-                }
-                const remindersRef = ref(database, 'reminders');
-                set(remindersRef, reminders);
-            }
+        function updateTodoList() {
+            const todoList = document.getElementById('todo-list');
+            todoList.innerHTML = '';
+            Object.keys(window.todos).forEach(date => {
+                window.todos[date].forEach(todo => {
+                    const li = document.createElement('li');
+                    li.textContent = `${todo.title} - ${date} ${todo.time}`;
+                    todoList.appendChild(li);
+                });
+            });
+        }
+
+        function updateReminderList() {
+            const reminderList = document.getElementById('reminder-list');
+            reminderList.innerHTML = '';
+            Object.keys(window.reminders).forEach(date => {
+                window.reminders[date].forEach(reminder => {
+                    const li = document.createElement('li');
+                    li.textContent = `${reminder.title} - ${date} ${reminder.time}`;
+                    reminderList.appendChild(li);
+                });
+            });
         }
 
         function generateCalendar(calendarId) {
@@ -398,4 +239,30 @@
                     } else if (day > daysInMonth) {
                         break;
                     } else {
-                        const currentDate = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.
+                        const currentDate = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                        let hasDot = (window.todos[currentDate] && window.todos[currentDate].length > 0) || 
+                                     (window.reminders[currentDate] && window.reminders[currentDate].length > 0);
+                        calendarHTML += `<td>${day}${hasDot ? '<span class="dot"></span>' : ''}</td>`;
+                        day++;
+                    }
+                }
+                calendarHTML += '</tr>';
+                if (day > daysInMonth) {
+                    break;
+                }
+            }
+
+            calendarHTML += '</tbody></table>';
+            calendarDiv.innerHTML = calendarHTML;
+        }
+
+        function updateCalendars() {
+            generateCalendar('calendar-1');
+            generateCalendar('calendar-2');
+        }
+
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>

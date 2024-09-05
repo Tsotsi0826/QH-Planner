@@ -316,6 +316,12 @@
             const formData = new FormData(form);
             const projectData = Object.fromEntries(formData);
 
+            // Check if projectName is filled
+            if (!projectData.projectName) {
+                showMessage('Please enter a Project Name before saving.', 'error');
+                return;
+            }
+
             setLoading(true);
 
             try {
@@ -325,6 +331,7 @@
 
                 showMessage('Project saved successfully!', 'success');
                 form.reset(); // Clear the form after successful save
+                loadClients(); // Refresh clients list after saving
             } catch (error) {
                 console.error('Error saving data:', error);
                 showMessage('Error saving data. Please try again.', 'error');
@@ -355,20 +362,26 @@
             
             // Listen for changes in the 'projects' path
             clientsRef.on('value', (snapshot) => {
+                console.log('Fetching data from Firebase...'); // Log to check when data is fetched
                 if (snapshot.exists()) {
                     const data = snapshot.val();
+                    console.log('Data received:', data); // Log the complete data object
+
                     clientsList.innerHTML = ''; // Clear existing list each time data changes
 
                     // Iterate through each project in the snapshot
                     for (const key in data) {
-                        const client = data[key];
+                        const project = data[key];
 
-                        // Check if required fields are available in each project
-                        if (client.clientName && client.clientSurname && client.clientCell) {
+                        // Log the specific project object to check its structure
+                        console.log(`Project data for key ${key}:`, project);
+
+                        // Check if the project has a name
+                        if (project.projectName) {
                             const clientItem = document.createElement('div');
                             clientItem.className = 'client-item';
                             clientItem.innerHTML = `
-                                <span>${client.clientName} ${client.clientSurname} - ${client.clientCell}</span>
+                                <span>${project.projectName}</span>
                                 <div class="client-icons">
                                     <i class="fas fa-arrow-right" title="Move to Current Project"></i>
                                     <i class="fas fa-calendar-alt" title="Move to Upcoming Project"></i>
@@ -377,11 +390,12 @@
                             `;
                             clientsList.appendChild(clientItem);
                         } else {
-                            console.warn('Client data missing required fields:', client);
+                            console.warn('Project data missing projectName:', project);
                         }
                     }
                 } else {
-                    clientsList.innerHTML = '<p>No clients found.</p>'; // Show a message if no data is found
+                    console.log('No data found in the "projects" path.');
+                    clientsList.innerHTML = '<p>No projects found.</p>'; // Show a message if no data is found
                 }
             }, (error) => {
                 console.error('Error fetching data from Firebase:', error);

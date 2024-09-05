@@ -325,8 +325,7 @@
                 await newProjectRef.set(projectData);
 
                 showMessage('Project saved successfully!', 'success');
-                form.reset();
-                loadClients(); // Refresh clients list after saving
+                form.reset(); // Clear the form after successful save
             } catch (error) {
                 console.error('Error saving data:', error);
                 showMessage('Error saving data. Please try again.', 'error');
@@ -352,8 +351,9 @@
             const clientsList = document.getElementById('clientsList');
             clientsList.innerHTML = ''; // Clear existing list
             const clientsRef = firebase.database().ref('projects');
-            clientsRef.once('value', (snapshot) => {
+            clientsRef.on('value', (snapshot) => {  // Changed to 'on' to listen for real-time updates
                 const data = snapshot.val();
+                clientsList.innerHTML = ''; // Clear existing list each time data changes
                 for (const key in data) {
                     const client = data[key];
                     const clientItem = document.createElement('div');
@@ -371,7 +371,7 @@
             });
         }
 
-        loadClients();
+        loadClients(); // Initialize loading of clients on page load
     });
     </script>
 </body>

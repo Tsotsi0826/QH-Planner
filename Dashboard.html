@@ -45,6 +45,10 @@
             margin: 10px;
             width: calc(25% - 20px);
             min-width: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         .tile:hover {
             transform: translateY(-5px);
@@ -73,41 +77,33 @@
     <h1>Construction Project Dashboard</h1>
     
     <div class="dashboard">
-        <div class="tile create-project" onclick="showDetails('create-project')">
+        <div class="tile create-project" onclick="showDetails('create-project')" aria-label="Create a Project">
             <div class="tile-icon">➕</div>
             <div class="tile-title">Create a Project</div>
         </div>
-        <div class="tile" onclick="showDetails('current-projects')">
+        <div class="tile" onclick="showDetails('current-projects')" aria-label="Current Projects">
             <div class="tile-icon">👷</div>
             <div class="tile-title">Current Projects</div>
         </div>
-        <div class="tile" onclick="showDetails('upcoming-projects')">
+        <div class="tile" onclick="showDetails('upcoming-projects')" aria-label="Upcoming Projects">
             <div class="tile-icon">📅</div>
             <div class="tile-title">Upcoming Projects</div>
         </div>
-        <div class="tile" onclick="showDetails('todo-list')">
+        <div class="tile" onclick="showDetails('todo-list')" aria-label="To-Do List">
             <div class="tile-icon">✅</div>
-            <div class="tile-title">To-Do List</div>
+            <div class="tile-title">To-Do List & Reminders</div>
         </div>
-        <div class="tile" onclick="showDetails('reminders')">
-            <div class="tile-icon">🔔</div>
-            <div class="tile-title">Reminders</div>
-        </div>
-        <div class="tile" onclick="showDetails('meetings')">
+        <div class="tile" onclick="showDetails('meetings')" aria-label="Meetings">
             <div class="tile-icon">👥</div>
             <div class="tile-title">Meetings</div>
         </div>
-        <div class="tile" onclick="showDetails('calendar-view')">
+        <div class="tile" onclick="showDetails('calendar-view')" aria-label="Calendar View">
             <div class="tile-icon">📆</div>
             <div class="tile-title">Calendar View</div>
         </div>
-        <div class="tile" onclick="showDetails('quotes-in-progress')">
+        <div class="tile" onclick="showDetails('quotes')" aria-label="Quotes">
             <div class="tile-icon">📝</div>
-            <div class="tile-title">Quotes in Progress</div>
-        </div>
-        <div class="tile" onclick="showDetails('quotes-completed')">
-            <div class="tile-icon">✔️</div>
-            <div class="tile-title">Quotes Completed</div>
+            <div class="tile-title">Quotes</div>
         </div>
     </div>
     <script>
@@ -116,13 +112,11 @@
             const categoryFiles = {
                 'create-project': 'Create%20New%20Project.html', // Link to the Create New Project page
                 'current-projects': 'Current%20Projects.html', // Updated link to the Current Projects page
-                'upcoming-projects': '',
-                'todo-list': '',
-                'reminders': '',
+                'upcoming-projects': '', // To be implemented
+                'todo-list': '', // To be implemented
                 'meetings': 'Meetings.html', // Updated link to the Meetings page
-                'calendar-view': '',
-                'quotes-in-progress': '',
-                'quotes-completed': ''
+                'calendar-view': '', // To be implemented
+                'quotes': '' // To be implemented
             };
 
             // Get the corresponding file for the category

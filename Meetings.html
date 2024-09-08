@@ -210,59 +210,47 @@
             }
         }
 
-        // Add a new meeting
-        function addMeeting(event) {
-            event.preventDefault();
-            const userName = document.getElementById('user-name').value;
-            const customerName = document.getElementById('customer-name').value;
-            const meetingDate = document.getElementById('meeting-date').value;
-            const meetingTime = document.getElementById('meeting-time').value;
-
-            const newMeeting = {
-                userName: userName,
-                customerName: customerName,
-                date: meetingDate,
-                time: meetingTime
-            };
-
-            database.ref('meetings').push(newMeeting)
-                .then(() => {
-                    console.log('Meeting added successfully');
-                    event.target.reset();
-                    loadMeetings();
-                })
-                .catch((error) => {
-                    console.error('Error adding meeting: ', error);
-                });
-        }
-
-        // Load meetings from Firebase
+        // Load meetings from Firebase based on the selected user
         function loadMeetings() {
+            const selectedUser = document.getElementById('user-name').value;
             const meetingsRef = database.ref('meetings');
+
+            // Clear current meetings display and calendar highlights
+            const meetingsList = document.getElementById('meetings-list');
+            meetingsList.innerHTML = '<h2>Upcoming Meetings</h2>';
+            document.querySelectorAll('.calendar-day').forEach(day => {
+                day.classList.remove('has-meeting');
+            });
+
+            // Do not display meetings if no user is selected
+            if (!selectedUser || selectedUser === 'add-user') {
+                return;
+            }
+
             meetingsRef.on('value', (snapshot) => {
                 const data = snapshot.val();
-                const meetingsList = document.getElementById('meetings-list');
-                meetingsList.innerHTML = '<h2>Upcoming Meetings</h2>';
                 for (let id in data) {
                     const meeting = data[id];
-                    const meetingItem = document.createElement('div');
-                    meetingItem.className = 'meeting-item';
-                    meetingItem.innerHTML = `
-                        <strong>${meeting.customerName}</strong><br>
-                        With: ${meeting.userName}<br>
-                        On: ${meeting.date} at ${meeting.time}
-                        <div>
-                            <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
-                            <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
-                        </div>
-                    `;
-                    meetingsList.appendChild(meetingItem);
+                    if (meeting.userName === selectedUser) {
+                        const meetingItem = document.createElement('div');
+                        meetingItem.className = 'meeting-item';
+                        meetingItem.innerHTML = `
+                            <strong>${meeting.customerName}</strong><br>
+                            With: ${meeting.userName}<br>
+                            On: ${meeting.date} at ${meeting.time}
+                            <div>
+                                <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
+                                <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
+                            </div>
+                        `;
+                        meetingsList.appendChild(meetingItem);
 
-                    // Mark the day on the calendar
-                    const day = new Date(meeting.date).getDate();
-                    const calendarDays = document.querySelectorAll('.calendar-day');
-                    if (calendarDays[day - 1]) {
-                        calendarDays[day - 1].classList.add('has-meeting');
+                        // Mark the day on the calendar
+                        const day = new Date(meeting.date).getDate();
+                        const calendarDays = document.querySelectorAll('.calendar-day');
+                        if (calendarDays[day - 1]) {
+                            calendarDays[day - 1].classList.add('has-meeting');
+                        }
                     }
                 }
             });
@@ -314,6 +302,32 @@
                         console.error('Error deleting meeting: ', error);
                     });
             }
+        }
+
+        // Add a new meeting
+        function addMeeting(event) {
+            event.preventDefault();
+            const userName = document.getElementById('user-name').value;
+            const customerName = document.getElementById('customer-name').value;
+            const meetingDate = document.getElementById('meeting-date').value;
+            const meetingTime = document.getElementById('meeting-time').value;
+
+            const newMeeting = {
+                userName: userName,
+                customerName: customerName,
+                date: meetingDate,
+                time: meetingTime
+            };
+
+            database.ref('meetings').push(newMeeting)
+                .then(() => {
+                    console.log('Meeting added successfully');
+                    event.target.reset();
+                    loadMeetings();
+                })
+                .catch((error) => {
+                    console.error('Error adding meeting: ', error);
+                });
         }
 
         // Add new todo
@@ -399,12 +413,13 @@
         document.getElementById('user-name').addEventListener('change', function() {
             if (this.value === 'add-user') {
                 addNewUser();
+            } else {
+                loadMeetings();
             }
         });
 
         // Initialize
         generateCalendar();
-        loadMeetings();
         loadTodos();
     </script>
 </body>

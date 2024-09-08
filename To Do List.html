@@ -176,7 +176,7 @@
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
@@ -198,8 +198,11 @@
         function loadData() {
             const todosRef = ref(database, 'todos');
             onValue(todosRef, (snapshot) => {
-                window.todos = snapshot.val() || {};
+                const data = snapshot.val() || {};
+                window.todos = data.tasks || {};
+                window.users = data.users || [];
                 updateTodoList();
+                updateUserSelect('todo-user-select', window.users);
                 updateCalendars();
             });
 
@@ -207,6 +210,7 @@
             onValue(remindersRef, (snapshot) => {
                 window.reminders = snapshot.val() || {};
                 updateReminderList();
+                updateUserSelect('reminder-user-select', window.users);
                 updateCalendars();
             });
         }
@@ -218,14 +222,28 @@
 
             if (userName && !window.users.includes(userName)) {
                 window.users.push(userName);
-                const option = document.createElement('option');
-                option.value = userName;
-                option.textContent = userName;
-                select.appendChild(option);
+                saveUsersToDatabase();
+                updateUserSelect(select.id, window.users);
                 input.value = '';
             } else {
                 alert('User name is required or already exists.');
             }
+        }
+
+        function saveUsersToDatabase() {
+            const todosRef = ref(database, 'todos');
+            set(todosRef, { tasks: window.todos, users: window.users });
+        }
+
+        function updateUserSelect(selectId, users) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="all">View All</option>';
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user;
+                option.textContent = user;
+                select.appendChild(option);
+            });
         }
 
         window.addTodo = function() {
@@ -245,9 +263,7 @@
             }
             window.todos[todoDate].push({ title: todoTitle, time: todoTime, user });
 
-            const todosRef = ref(database, 'todos');
-            set(todosRef, window.todos);
-
+            saveUsersToDatabase();
             todoInput.value = '';
             document.getElementById('todo-date').value = '';
             document.getElementById('todo-time').value = '';

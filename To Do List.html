@@ -189,7 +189,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
@@ -211,8 +211,7 @@
         function loadData() {
             const todosRef = ref(database, 'todos');
             onValue(todosRef, (snapshot) => {
-                const data = snapshot.val() || {};
-                window.todos = data;
+                window.todos = snapshot.val() || {};
                 updateTodoList();
                 updateCalendars('calendar-1', window.todos);
             });
@@ -223,17 +222,23 @@
                 updateReminderList();
                 updateCalendars('calendar-2', window.reminders);
             });
+
+            const usersRef = ref(database, 'users');
+            onValue(usersRef, (snapshot) => {
+                window.users = snapshot.val() || [];
+                updateUserSelect('todo-user-select', window.users);
+                updateUserSelect('reminder-user-select', window.users);
+            });
         }
 
         function addUser(type) {
             const input = type === 'todo' ? document.getElementById('todo-add-user') : document.getElementById('reminder-add-user');
-            const select = type === 'todo' ? document.getElementById('todo-user-select') : document.getElementById('reminder-user-select');
             const userName = input.value.trim();
 
             if (userName && !window.users.includes(userName)) {
                 window.users.push(userName);
-                update(ref(database, 'users'), window.users);
-                updateUserSelect(select.id, window.users);
+                set(ref(database, 'users'), window.users);
+                updateUserSelect(type === 'todo' ? 'todo-user-select' : 'reminder-user-select', window.users);
                 input.value = '';
             } else {
                 alert('User name is required or already exists.');
@@ -259,7 +264,7 @@
             }
             window.todos[todoDate].push(task);
 
-            update(ref(database, 'todos'), window.todos);
+            set(ref(database, 'todos'), window.todos);
             todoInput.value = '';
             document.getElementById('todo-date').value = '';
             document.getElementById('todo-time').value = '';
@@ -286,7 +291,7 @@
             }
             window.reminders[reminderDate].push(reminder);
 
-            update(ref(database, 'reminders'), window.reminders);
+            set(ref(database, 'reminders'), window.reminders);
             reminderInput.value = '';
             document.getElementById('reminder-date').value = '';
             document.getElementById('reminder-time').value = '';

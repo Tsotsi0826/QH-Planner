@@ -362,10 +362,13 @@
                 startDate,
                 endDate,
                 status
+            }).then(() => {
+                console.log("Data saved successfully.");
+                // Clear form inputs
+                document.getElementById('projectForm').reset();
+            }).catch((error) => {
+                console.error("Error saving data: ", error);
             });
-
-            // Clear form inputs
-            document.getElementById('projectForm').reset();
         });
 
         function addProjectToUI(name, manager, siteManager, status, key) {
@@ -442,5 +445,4 @@
 
                 const start = new Date(project.startDate);
                 const end = new Date(project.endDate);
-                const startOffset = (start - minDate) / (7 * 24 * 60 * 60 * 1000) * 50;
-                const duration = (end - start) / (7 * 24 * 60 * 60 * 1000
+                const startOffset = (start - minDate) / (7 * 24 * 60 * 60 * 1000) *

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects Page</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .projects-container, .form-container {
+            flex: 1;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #2980b9;
+        }
+
+        .project-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .project-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .project-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+            color: #666;
+            transition: color 0.3s;
+        }
+
+        .project-actions button:hover {
+            color: #333;
+        }
+
+        .project-actions .edit {
+            color: #3498db;
+        }
+
+        .project-actions .delete {
+            color: #e74c3c;
+        }
+
+        input, select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #2ecc71;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="Dashboard.html" class="back-button">Back to Dashboard</a>
+
+    <h2>Project Management</h2>
+    <div class="container">
+        <div class="form-container">
+            <h3>Project Details</h3>
+            <form id="projectForm">
+                <label for="projectName">Project Name:</label>
+                <input type="text" id="projectName" required>
+
+                <label for="projectManager">Project Manager:</label>
+                <input type="text" id="projectManager" required>
+
+                <label for="siteManager">Site Manager:</label>
+                <input type="text" id="siteManager" required>
+
+                <label for="taskStart">Start Date:</label>
+                <input type="date" id="taskStart" required>
+
+                <label for="taskEnd">End Date:</label>
+                <input type="date" id="taskEnd" required>
+
+                <label for="projectStatus">Status:</label>
+                <select id="projectStatus" required>
+                    <option value="Not Started">Not Started</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="On Hold">On Hold</option>
+                </select>
+
+                <button type="submit">Add Project</button>
+            </form>
+        </div>
+
+        <div class="projects-container">
+            <h3>Running Projects</h3>
+            <ul class="project-list" id="projectList">
+                <!-- Projects will be dynamically added here -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "https://qh-planner-default-rtdb.firebaseio.com",
+            projectId: "qh-planner",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database(app);
+
+        document.getElementById('projectForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const projectName = document.getElementById('projectName').value;
+            const projectManager = document.getElementById('projectManager').value;
+            const siteManager = document.getElementById('siteManager').value;
+            const startDate = document.getElementById('taskStart').value;
+            const endDate = document.getElementById('taskEnd').value;
+            const status = document.getElementById('projectStatus').value;
+
+            // Reference to the calendar folder in Firebase
+            const newProjectRef = db.ref('calendar/projects').push();
+            newProjectRef.set({
+                projectName,
+                projectManager,
+                siteManager,
+                startDate,
+                endDate,
+                status
+            });
+
+            // Optionally, add the project to the UI
+            addProjectToUI(projectName, projectManager, siteManager, status);
+        });
+
+        function addProjectToUI(name, manager, siteManager, status) {
+            const projectList = document.getElementById('projectList');
+            const li = document.createElement('li');
+            li.className = 'project-item';
+            li.innerHTML = `
+                <span>${name} - ${manager} - ${siteManager} (${status})</span>
+                <div class="project-actions">
+                    <button class="edit"><i class="fas fa-edit"></i></button>
+                    <button class="delete"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            `;
+            projectList.appendChild(li);
+        }
+    </script>
+</body>
+</html>

@@ -138,7 +138,6 @@
             background-color: #27ae60;
         }
 
-        /* Enhanced Gantt Chart Styles */
         .gantt-container {
             background: #ffffff;
             padding: 20px;
@@ -188,10 +187,17 @@
 
         .gantt-bar {
             height: 100%;
-            background-color: #3498db;
             border-radius: 15px;
             position: absolute;
             top: 0;
+        }
+
+        .gantt-bar-anton {
+            background-color: #2ecc71; /* Green for Anton */
+        }
+
+        .gantt-bar-jeanne {
+            background-color: #3498db; /* Blue for Jeanne */
         }
 
         .gantt-bar::after {
@@ -202,6 +208,25 @@
             transform: translateY(-50%);
             color: #fff;
             font-size: 12px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 5px;
         }
 
         @media (max-width: 768px) {
@@ -269,6 +294,16 @@
             <div class="gantt-chart" id="ganttChart">
                 <div class="timeline" id="timeline"></div>
                 <!-- Gantt bars will be dynamically added here -->
+            </div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #2ecc71;"></div>
+                    <span>Anton</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #3498db;"></div>
+                    <span>Jeanne</span>
+                </div>
             </div>
         </div>
     </div>
@@ -397,31 +432,15 @@
 
                 const bar = document.createElement('div');
                 bar.className = 'gantt-bar';
+                
+                // Set color based on Project Manager
+                if (project.projectManager.toLowerCase() === 'anton') {
+                    bar.classList.add('gantt-bar-anton');
+                } else if (project.projectManager.toLowerCase() === 'jeanne') {
+                    bar.classList.add('gantt-bar-jeanne');
+                }
 
                 const start = new Date(project.startDate);
                 const end = new Date(project.endDate);
                 const startOffset = (start - minDate) / (7 * 24 * 60 * 60 * 1000) * 50;
-                const duration = (end - start) / (7 * 24 * 60 * 60 * 1000) * 50;
-
-                bar.style.left = `${startOffset}px`;
-                bar.style.width = `${duration}px`;
-                bar.setAttribute('data-duration', `${Math.ceil(duration / 50)} weeks`);
-
-                barContainer.appendChild(bar);
-                row.appendChild(label);
-                row.appendChild(barContainer);
-                ganttChart.appendChild(row);
-            });
-        }
-
-        function deleteProject(key) {
-            db.ref('calendar/' + key).remove();
-        }
-
-        function editProject(key) {
-            // Functionality to edit project details will be added here
-            alert('Edit functionality will be implemented here.');
-        }
-    </script>
-</body>
-</html>
+                const duration = (end - start) / (7 * 24 * 60 * 60 * 1000

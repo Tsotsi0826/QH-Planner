@@ -43,14 +43,19 @@
         }
         .header-section {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            margin-bottom: 10px;
         }
         h2 {
             color: #333;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
         }
         .form-group {
             margin-bottom: 15px;
+            display: flex;
+            align-items: center;
         }
         input[type="text"], input[type="date"], input[type="time"] {
             padding: 5px;
@@ -101,12 +106,16 @@
         }
         .user-select {
             padding: 5px;
-            margin-left: 10px;
+            margin-left: 5px;
+        }
+        .add-user-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         .add-user-input {
             width: 80px;
             padding: 5px;
-            margin-right: 5px;
         }
         .add-user-btn {
             padding: 5px;
@@ -133,11 +142,13 @@
         <div class="column">
             <div class="header-section">
                 <h2>To-Do List</h2>
-                <input type="text" id="todo-add-user" class="add-user-input" placeholder="Add User">
-                <button class="add-user-btn" onclick="addUser('todo')">+</button>
-                <select id="todo-user-select" class="user-select" onchange="filterTasks()">
-                    <option value="all">View All</option>
-                </select>
+                <div class="add-user-group">
+                    <input type="text" id="todo-add-user" class="add-user-input" placeholder="Add User">
+                    <button class="add-user-btn" onclick="addUser('todo')">+</button>
+                    <select id="todo-user-select" class="user-select" onchange="filterTasks()">
+                        <option value="all">View All</option>
+                    </select>
+                </div>
             </div>
             <div class="form-group">
                 <input type="text" id="todo-input" placeholder="Enter a new task">
@@ -154,11 +165,13 @@
         <div class="column">
             <div class="header-section">
                 <h2>Reminders</h2>
-                <input type="text" id="reminder-add-user" class="add-user-input" placeholder="Add User">
-                <button class="add-user-btn" onclick="addUser('reminder')">+</button>
-                <select id="reminder-user-select" class="user-select" onchange="filterReminders()">
-                    <option value="all">View All</option>
-                </select>
+                <div class="add-user-group">
+                    <input type="text" id="reminder-add-user" class="add-user-input" placeholder="Add User">
+                    <button class="add-user-btn" onclick="addUser('reminder')">+</button>
+                    <select id="reminder-user-select" class="user-select" onchange="filterReminders()">
+                        <option value="all">View All</option>
+                    </select>
+                </div>
             </div>
             <div class="form-group">
                 <input type="text" id="reminder-input" placeholder="Reminder Title">
@@ -176,7 +189,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
@@ -199,19 +212,16 @@
             const todosRef = ref(database, 'todos');
             onValue(todosRef, (snapshot) => {
                 const data = snapshot.val() || {};
-                window.todos = data.tasks || {};
-                window.users = data.users || [];
+                window.todos = data;
                 updateTodoList();
-                updateUserSelect('todo-user-select', window.users);
-                updateCalendars();
+                updateCalendars('calendar-1', window.todos);
             });
 
             const remindersRef = ref(database, 'reminders');
             onValue(remindersRef, (snapshot) => {
                 window.reminders = snapshot.val() || {};
                 updateReminderList();
-                updateUserSelect('reminder-user-select', window.users);
-                updateCalendars();
+                updateCalendars('calendar-2', window.reminders);
             });
         }
 
@@ -222,7 +232,7 @@
 
             if (userName && !window.users.includes(userName)) {
                 window.users.push(userName);
-                saveUsersToDatabase();
+                update(ref(database, 'users'), window.users);
                 updateUserSelect(select.id, window.users);
                 input.value = '';
             } else {
@@ -230,23 +240,7 @@
             }
         }
 
-        function saveUsersToDatabase() {
-            const todosRef = ref(database, 'todos');
-            set(todosRef, { tasks: window.todos, users: window.users });
-        }
-
-        function updateUserSelect(selectId, users) {
-            const select = document.getElementById(selectId);
-            select.innerHTML = '<option value="all">View All</option>';
-            users.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user;
-                option.textContent = user;
-                select.appendChild(option);
-            });
-        }
-
-        window.addTodo = function() {
+        function addTodo() {
             const todoInput = document.getElementById('todo-input');
             const todoDate = document.getElementById('todo-date').value;
             const todoTime = document.getElementById('todo-time').value;
@@ -258,18 +252,22 @@
                 return;
             }
 
+            const task = { title: todoTitle, time: todoTime, user };
+
             if (!window.todos[todoDate]) {
                 window.todos[todoDate] = [];
             }
-            window.todos[todoDate].push({ title: todoTitle, time: todoTime, user });
+            window.todos[todoDate].push(task);
 
-            saveUsersToDatabase();
+            update(ref(database, 'todos'), window.todos);
             todoInput.value = '';
             document.getElementById('todo-date').value = '';
             document.getElementById('todo-time').value = '';
+            updateTodoList();
+            updateCalendars('calendar-1', window.todos);
         }
 
-        window.addReminder = function() {
+        function addReminder() {
             const reminderInput = document.getElementById('reminder-input');
             const reminderDate = document.getElementById('reminder-date').value;
             const reminderTime = document.getElementById('reminder-time').value;
@@ -281,25 +279,19 @@
                 return;
             }
 
+            const reminder = { title: reminderTitle, time: reminderTime, user };
+
             if (!window.reminders[reminderDate]) {
                 window.reminders[reminderDate] = [];
             }
-            window.reminders[reminderDate].push({ title: reminderTitle, time: reminderTime, user });
+            window.reminders[reminderDate].push(reminder);
 
-            const remindersRef = ref(database, 'reminders');
-            set(remindersRef, window.reminders);
-
+            update(ref(database, 'reminders'), window.reminders);
             reminderInput.value = '';
             document.getElementById('reminder-date').value = '';
             document.getElementById('reminder-time').value = '';
-        }
-
-        function filterTasks() {
-            updateTodoList();
-        }
-
-        function filterReminders() {
             updateReminderList();
+            updateCalendars('calendar-2', window.reminders);
         }
 
         function updateTodoList() {
@@ -346,7 +338,7 @@
             });
         }
 
-        function generateCalendar(calendarId) {
+        function generateCalendar(calendarId, data) {
             const calendarDiv = document.getElementById(calendarId);
             const date = new Date();
             const currentMonth = date.getMonth();
@@ -381,14 +373,11 @@
                         break;
                     } else {
                         const currentDate = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                        let todoCount = window.todos[currentDate] ? window.todos[currentDate].length : 0;
-                        let reminderCount = window.reminders[currentDate] ? window.reminders[currentDate].length : 0;
                         let cellContent = `${day}`;
-                        if (todoCount > 0) {
-                            cellContent += `<br><span class="dot" title="${todoCount} todo(s)"></span>`;
-                        }
-                        if (reminderCount > 0) {
-                            cellContent += `<br><span class="dot" style="background-color: #f44336;" title="${reminderCount} reminder(s)"></span>`;
+                        if (data[currentDate]) {
+                            data[currentDate].forEach(item => {
+                                cellContent += `<br><span class="dot" title="${item.title} - ${item.time} (${item.user})"></span>`;
+                            });
                         }
                         calendarHTML += `<td>${cellContent}</td>`;
                         day++;
@@ -404,9 +393,8 @@
             calendarDiv.innerHTML = calendarHTML;
         }
 
-        function updateCalendars() {
-            generateCalendar('calendar-1');
-            generateCalendar('calendar-2');
+        function updateCalendars(calendarId, data) {
+            generateCalendar(calendarId, data);
         }
 
         // Initialize

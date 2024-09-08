@@ -52,6 +52,7 @@
         .project-list {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
 
         .project-item {
@@ -60,6 +61,20 @@
             align-items: center;
             padding: 10px;
             border-bottom: 1px solid #ddd;
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: #ddd;
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .project-header div {
+            flex: 1;
+            text-align: center;
         }
 
         .project-actions button {
@@ -108,6 +123,24 @@
         button[type="submit"]:hover {
             background-color: #27ae60;
         }
+
+        /* Gantt Chart Styles */
+        .gantt-chart {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .gantt-bar {
+            height: 30px;
+            margin: 5px 0;
+            background-color: #3498db;
+            border-radius: 5px;
+            color: #fff;
+            text-align: center;
+            line-height: 30px;
+        }
     </style>
 </head>
 <body>
@@ -148,10 +181,23 @@
 
         <div class="projects-container">
             <h3>Running Projects</h3>
+            <!-- Project list header -->
+            <div class="project-header">
+                <div>Project Name</div>
+                <div>Project Manager</div>
+                <div>Site Manager</div>
+                <div>Status</div>
+                <div>Actions</div>
+            </div>
             <ul class="project-list" id="projectList">
                 <!-- Projects will be dynamically added here -->
             </ul>
         </div>
+    </div>
+
+    <div class="gantt-chart" id="ganttChart">
+        <h3>Gantt Chart</h3>
+        <!-- Gantt bars will be dynamically added here -->
     </div>
 
     <!-- Correct Firebase SDKs for HTML environments -->
@@ -178,10 +224,13 @@
         db.ref('calendar').on('value', (snapshot) => {
             const projects = snapshot.val();
             const projectList = document.getElementById('projectList');
+            const ganttChart = document.getElementById('ganttChart');
             projectList.innerHTML = ''; // Clear the list
+            ganttChart.innerHTML = '<h3>Gantt Chart</h3>'; // Clear and reset Gantt chart
             for (const key in projects) {
                 const project = projects[key];
                 addProjectToUI(project.projectName, project.projectManager, project.siteManager, project.status, key);
+                addGanttBar(project.projectName, project.startDate, project.endDate);
             }
         });
 
@@ -214,13 +263,30 @@
             const li = document.createElement('li');
             li.className = 'project-item';
             li.innerHTML = `
-                <span>${name} - ${manager} - ${siteManager} (${status})</span>
+                <div>${name}</div>
+                <div>${manager}</div>
+                <div>${siteManager}</div>
+                <div>${status}</div>
                 <div class="project-actions">
                     <button class="edit" onclick="editProject('${key}')"><i class="fas fa-edit"></i></button>
                     <button class="delete" onclick="deleteProject('${key}')"><i class="fas fa-trash-alt"></i></button>
                 </div>
             `;
             projectList.appendChild(li);
+        }
+
+        function addGanttBar(name, startDate, endDate) {
+            const ganttChart = document.getElementById('ganttChart');
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const duration = (end - start) / (1000 * 60 * 60 * 24); // Calculate duration in days
+
+            const bar = document.createElement('div');
+            bar.className = 'gantt-bar';
+            bar.style.width = duration * 10 + 'px'; // Scale width based on duration
+            bar.textContent = `${name}: ${startDate} - ${endDate}`;
+
+            ganttChart.appendChild(bar);
         }
 
         function deleteProject(key) {

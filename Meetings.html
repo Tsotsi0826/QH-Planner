@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meetings Scheduler - Construction Project</title>
+    <title>Meetings and Todos - Construction Project</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         :root {
             --primary-color: #3498db;
@@ -28,13 +30,13 @@
             flex-wrap: wrap;
             gap: 20px;
         }
-        .form-container, .calendar-container {
+        .form-container, .calendar-container, .todos-container {
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 20px;
         }
-        .form-container {
+        .form-container, .todos-container {
             flex: 1;
             min-width: 300px;
         }
@@ -88,10 +90,10 @@
         .calendar-day.has-meeting {
             background-color: #d5f5e3;
         }
-        #meetings-list {
+        #meetings-list, #todos-list {
             margin-top: 20px;
         }
-        .meeting-item {
+        .meeting-item, .todo-item {
             background-color: #f8f9fa;
             border-radius: 4px;
             padding: 10px;
@@ -107,6 +109,20 @@
         }
         .home-link svg {
             margin-right: 10px;
+        }
+        .edit-btn, .delete-btn {
+            padding: 5px 10px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .edit-btn {
+            background-color: #f39c12;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
         }
     </style>
 </head>
@@ -127,8 +143,6 @@
                     <label for="user-name">User Name:</label>
                     <select id="user-name" required>
                         <option value="">Select User</option>
-                        <option value="John Doe">John Doe</option>
-                        <option value="Jane Smith">Jane Smith</option>
                         <option value="add-user">Add New User</option>
                     </select>
                 </div>
@@ -157,9 +171,33 @@
                 <!-- Meeting list will be populated by JavaScript -->
             </div>
         </div>
+        <div class="todos-container">
+            <h2>Todos</h2>
+            <form id="todo-form">
+                <div class="form-group">
+                    <label for="todo-text">New Todo:</label>
+                    <input type="text" id="todo-text" required>
+                </div>
+                <button type="submit">Add Todo</button>
+            </form>
+            <div id="todos-list">
+                <!-- Todos list will be populated by JavaScript -->
+            </div>
+        </div>
     </div>
 
     <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            databaseURL: "https://qh-planner-default-rtdb.firebaseio.com/",
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Get a reference to the database service
+        const database = firebase.database();
+
         // Generate calendar
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
@@ -180,23 +218,167 @@
             const meetingDate = document.getElementById('meeting-date').value;
             const meetingTime = document.getElementById('meeting-time').value;
 
-            const meetingsList = document.getElementById('meetings-list');
-            const meetingItem = document.createElement('div');
-            meetingItem.classList.add('meeting-item');
-            meetingItem.innerHTML = `
-                <strong>${customerName}</strong><br>
-                With: ${userName}<br>
-                On: ${meetingDate} at ${meetingTime}
-            `;
-            meetingsList.appendChild(meetingItem);
+            const newMeeting = {
+                userName: userName,
+                customerName: customerName,
+                date: meetingDate,
+                time: meetingTime
+            };
 
-            // Mark the day on the calendar
-            const day = new Date(meetingDate).getDate();
-            const calendarDays = document.querySelectorAll('.calendar-day');
-            calendarDays[day - 1].classList.add('has-meeting');
+            database.ref('meetings').push(newMeeting)
+                .then(() => {
+                    console.log('Meeting added successfully');
+                    event.target.reset();
+                    loadMeetings();
+                })
+                .catch((error) => {
+                    console.error('Error adding meeting: ', error);
+                });
+        }
 
-            // Reset form
-            event.target.reset();
+        // Load meetings from Firebase
+        function loadMeetings() {
+            const meetingsRef = database.ref('meetings');
+            meetingsRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                const meetingsList = document.getElementById('meetings-list');
+                meetingsList.innerHTML = '<h2>Upcoming Meetings</h2>';
+                for (let id in data) {
+                    const meeting = data[id];
+                    const meetingItem = document.createElement('div');
+                    meetingItem.className = 'meeting-item';
+                    meetingItem.innerHTML = `
+                        <strong>${meeting.customerName}</strong><br>
+                        With: ${meeting.userName}<br>
+                        On: ${meeting.date} at ${meeting.time}
+                        <div>
+                            <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
+                            <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
+                        </div>
+                    `;
+                    meetingsList.appendChild(meetingItem);
+
+                    // Mark the day on the calendar
+                    const day = new Date(meeting.date).getDate();
+                    const calendarDays = document.querySelectorAll('.calendar-day');
+                    if (calendarDays[day - 1]) {
+                        calendarDays[day - 1].classList.add('has-meeting');
+                    }
+                }
+            });
+        }
+
+        // Edit meeting
+        function editMeeting(id) {
+            const meetingRef = database.ref('meetings/' + id);
+            meetingRef.once('value').then((snapshot) => {
+                const meeting = snapshot.val();
+                document.getElementById('user-name').value = meeting.userName;
+                document.getElementById('customer-name').value = meeting.customerName;
+                document.getElementById('meeting-date').value = meeting.date;
+                document.getElementById('meeting-time').value = meeting.time;
+
+                const form = document.getElementById('meeting-form');
+                form.onsubmit = function(e) {
+                    e.preventDefault();
+                    const updatedMeeting = {
+                        userName: document.getElementById('user-name').value,
+                        customerName: document.getElementById('customer-name').value,
+                        date: document.getElementById('meeting-date').value,
+                        time: document.getElementById('meeting-time').value
+                    };
+                    meetingRef.update(updatedMeeting)
+                        .then(() => {
+                            console.log('Meeting updated successfully');
+                            form.reset();
+                            form.onsubmit = addMeeting;
+                            loadMeetings();
+                        })
+                        .catch((error) => {
+                            console.error('Error updating meeting: ', error);
+                        });
+                };
+            });
+        }
+
+        // Delete meeting
+        function deleteMeeting(id) {
+            if (confirm('Are you sure you want to delete this meeting?')) {
+                const meetingRef = database.ref('meetings/' + id);
+                meetingRef.remove()
+                    .then(() => {
+                        console.log('Meeting deleted successfully');
+                        loadMeetings();
+                    })
+                    .catch((error) => {
+                        console.error('Error deleting meeting: ', error);
+                    });
+            }
+        }
+
+        // Add new todo
+        function addTodo(event) {
+            event.preventDefault();
+            const todoText = document.getElementById('todo-text').value;
+            const newTodo = {
+                text: todoText,
+                completed: false
+            };
+
+            database.ref('todos').push(newTodo)
+                .then(() => {
+                    console.log('Todo added successfully');
+                    event.target.reset();
+                    loadTodos();
+                })
+                .catch((error) => {
+                    console.error('Error adding todo: ', error);
+                });
+        }
+
+        // Load todos from Firebase
+        function loadTodos() {
+            const todosRef = database.ref('todos');
+            todosRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                const todosList = document.getElementById('todos-list');
+                todosList.innerHTML = '';
+                for (let id in data) {
+                    const todo = data[id];
+                    const todoItem = document.createElement('div');
+                    todoItem.className = 'todo-item';
+                    todoItem.innerHTML = `
+                        <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo('${id}', this.checked)">
+                        <span>${todo.text}</span>
+                        <button class="delete-btn" onclick="deleteTodo('${id}')">Delete</button>
+                    `;
+                    todosList.appendChild(todoItem);
+                }
+            });
+        }
+
+        // Toggle todo completion
+        function toggleTodo(id, completed) {
+            const todoRef = database.ref('todos/' + id);
+            todoRef.update({ completed: completed })
+                .then(() => {
+                    console.log('Todo updated successfully');
+                })
+                .catch((error) => {
+                    console.error('Error updating todo: ', error);
+                });
+        }
+
+        // Delete todo
+        function deleteTodo(id) {
+            const todoRef = database.ref('todos/' + id);
+            todoRef.remove()
+                .then(() => {
+                    console.log('Todo deleted successfully');
+                })
+                .catch((error) => {
+                    console.error('Error deleting todo: ', error);
+                });
         }
 
         // Add new user
@@ -213,14 +395,17 @@
 
         // Event listeners
         document.getElementById('meeting-form').addEventListener('submit', addMeeting);
+        document.getElementById('todo-form').addEventListener('submit', addTodo);
         document.getElementById('user-name').addEventListener('change', function() {
             if (this.value === 'add-user') {
                 addNewUser();
             }
         });
 
-        // Initialize calendar
+        // Initialize
         generateCalendar();
+        loadMeetings();
+        loadTodos();
     </script>
 </body>
 </html>

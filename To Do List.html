@@ -208,6 +208,18 @@
         window.reminders = {};
         window.users = [];
 
+        // Function to update user select dropdowns
+        function updateUserSelect(selectId, users) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="all">View All</option>';
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user;
+                option.textContent = user;
+                select.appendChild(option);
+            });
+        }
+
         function loadData() {
             const todosRef = ref(database, 'todos');
             onValue(todosRef, (snapshot) => {
@@ -228,18 +240,6 @@
                 window.users = snapshot.val() || [];
                 updateUserSelect('todo-user-select', window.users);
                 updateUserSelect('reminder-user-select', window.users);
-            });
-        }
-
-        // Function to update user select dropdowns
-        function updateUserSelect(selectId, users) {
-            const select = document.getElementById(selectId);
-            select.innerHTML = '<option value="all">View All</option>';
-            users.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user;
-                option.textContent = user;
-                select.appendChild(option);
             });
         }
 

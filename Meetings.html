@@ -3,52 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meetings - Construction Project Dashboard</title>
+    <title>Meetings Scheduler - Construction Project</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #3498db;
             --secondary-color: #2ecc71;
-            --background-color: #f5f7fa;
-            --tile-color: #ffffff;
+            --background-color: #ecf0f1;
             --text-color: #34495e;
-            --meeting-dot-color: #e74c3c;
-            --delete-color: #e74c3c;
-            --edit-color: #f39c12;
+            --border-color: #bdc3c7;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Roboto', sans-serif;
             line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
             margin: 0;
             padding: 20px;
-            background-color: var(--background-color);
-            color: var(--text-color);
-        }
-        h1, h2 {
-            color: var(--text-color);
-            text-align: center;
-            font-weight: normal;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-between;
+            gap: 20px;
+        }
+        .form-container, .calendar-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .form-container {
+            flex: 1;
+            min-width: 300px;
         }
         .calendar-container {
             flex: 2;
-            background-color: var(--tile-color);
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-right: 20px;
+            min-width: 400px;
         }
-        .meeting-form {
-            flex: 1;
-            background-color: var(--tile-color);
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            padding: 20px;
+        h1, h2 {
+            color: var(--primary-color);
+            margin-top: 0;
         }
         .form-group {
             margin-bottom: 15px;
@@ -56,146 +52,84 @@
         label {
             display: block;
             margin-bottom: 5px;
-            color: var(--primary-color);
+            font-weight: 500;
         }
-        input[type="text"],
-        input[type="date"],
-        input[type="time"],
-        select {
+        input, select {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
+            padding: 8px;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             box-sizing: border-box;
-            transition: border-color 0.3s ease;
-        }
-        input[type="text"]:focus,
-        input[type="date"]:focus,
-        input[type="time"]:focus,
-        select:focus {
-            border-color: var(--primary-color);
-            outline: none;
         }
         button {
             background-color: var(--secondary-color);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 15px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
+            font-size: 16px;
         }
         button:hover {
             background-color: #27ae60;
         }
         #calendar {
-            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 20px;
         }
-        #calendar table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        #calendar th, #calendar td {
-            border: 1px solid #ddd;
+        .calendar-day {
+            background-color: #f8f9fa;
+            border-radius: 4px;
             padding: 10px;
             text-align: center;
         }
-        #calendar th {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        #calendar td {
-            position: relative;
-            height: 80px;
-            vertical-align: top;
-        }
-        .meeting-dot {
-            height: 8px;
-            width: 8px;
-            background-color: var(--meeting-dot-color);
-            border-radius: 50%;
-            display: inline-block;
-            margin: 1px;
-        }
-        .meeting-hover {
-            display: none;
-            position: absolute;
-            background-color: white;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 4px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 10;
-            width: 200px;
-            text-align: left;
+        .calendar-day.has-meeting {
+            background-color: #d5f5e3;
         }
         #meetings-list {
             margin-top: 20px;
         }
         .meeting-item {
-            background-color: var(--tile-color);
-            border-radius: 5px;
-            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 10px;
             margin-bottom: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.3s ease;
         }
-        .meeting-item:hover {
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        .home-link {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: 500;
+            margin-bottom: 20px;
         }
-        .meeting-actions {
-            margin-top: 10px;
-        }
-        .edit-btn, .delete-btn {
-            padding: 5px 10px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: opacity 0.3s ease;
-        }
-        .edit-btn {
-            background-color: var(--edit-color);
-            color: white;
-            margin-right: 5px;
-        }
-        .delete-btn {
-            background-color: var(--delete-color);
-            color: white;
-        }
-        .edit-btn:hover, .delete-btn:hover {
-            opacity: 0.8;
+        .home-link svg {
+            margin-right: 10px;
         }
     </style>
-    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <!-- Add Firebase products that you want to use -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
-    <h1>Meetings</h1>
+    <a href="Dashboard.html" class="home-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Back to Dashboard
+    </a>
     
     <div class="container">
-        <div class="calendar-container">
-            <h2>Calendar</h2>
-            <div id="calendar">
-                <!-- Calendar will be inserted here by JavaScript -->
-            </div>
-            <div id="meetings-list">
-                <!-- List of meetings will be inserted here by JavaScript -->
-            </div>
-        </div>
-        
-        <div class="meeting-form">
-            <h2>Create a Meeting</h2>
-            <form id="new-meeting-form">
+        <div class="form-container">
+            <h1>Schedule a Meeting</h1>
+            <form id="meeting-form">
                 <div class="form-group">
                     <label for="user-name">User Name:</label>
-                    <select id="user-name">
+                    <select id="user-name" required>
                         <option value="">Select User</option>
-                        <option value="add-user">Add User</option>
-                        <!-- Users will be dynamically added here -->
+                        <option value="John Doe">John Doe</option>
+                        <option value="Jane Smith">Jane Smith</option>
+                        <option value="add-user">Add New User</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -210,246 +144,83 @@
                     <label for="meeting-time">Time:</label>
                     <input type="time" id="meeting-time" required>
                 </div>
-                <button type="submit">Create Meeting</button>
+                <button type="submit">Schedule Meeting</button>
             </form>
+        </div>
+        <div class="calendar-container">
+            <h2>Meeting Calendar</h2>
+            <div id="calendar">
+                <!-- Calendar will be generated by JavaScript -->
+            </div>
+            <div id="meetings-list">
+                <h2>Upcoming Meetings</h2>
+                <!-- Meeting list will be populated by JavaScript -->
+            </div>
         </div>
     </div>
 
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            databaseURL: "https://qh-planner-default-rtdb.firebaseio.com/",
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-
-        // Get a reference to the database service
-        const database = firebase.database();
-
         // Generate calendar
-        function generateCalendar(year, month) {
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const firstDay = new Date(year, month, 1).getDay();
-            
-            let calendarHTML = '<table><tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr><tr>';
-            
-            for (let i = 0; i < firstDay; i++) {
-                calendarHTML += '<td></td>';
+        function generateCalendar() {
+            const calendar = document.getElementById('calendar');
+            const daysInMonth = 31; // Simplified for demonstration
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayElement = document.createElement('div');
+                dayElement.classList.add('calendar-day');
+                dayElement.textContent = i;
+                calendar.appendChild(dayElement);
             }
-            
-            for (let day = 1; day <= daysInMonth; day++) {
-                if ((day + firstDay - 1) % 7 === 0) {
-                    calendarHTML += '</tr><tr>';
-                }
-                calendarHTML += `<td data-date="${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}">${day}<div class="meeting-dots"></div><div class="meeting-hover"></div></td>`;
-            }
-            
-            calendarHTML += '</tr></table>';
-            document.getElementById('calendar').innerHTML = calendarHTML;
         }
 
-        // Update calendar with meetings
-        function updateCalendarWithMeetings(meetings) {
-            const cells = document.querySelectorAll('#calendar td');
-            cells.forEach(cell => {
-                const cellDate = cell.getAttribute('data-date');
-                const meetingsOnDay = meetings.filter(meeting => meeting.date === cellDate);
-                const dotsContainer = cell.querySelector('.meeting-dots');
-                const hoverContainer = cell.querySelector('.meeting-hover');
-                
-                dotsContainer.innerHTML = '';
-                hoverContainer.innerHTML = '';
-
-                if (meetingsOnDay.length > 0) {
-                    meetingsOnDay.forEach(meeting => {
-                        dotsContainer.innerHTML += '<span class="meeting-dot"></span>';
-                    });
-
-                    let hoverHTML = '<strong>Meetings:</strong><br>';
-                    meetingsOnDay.forEach(meeting => {
-                        hoverHTML += `${meeting.customerName} at ${meeting.time}<br>`;
-                    });
-                    hoverContainer.innerHTML = hoverHTML;
-
-                    cell.addEventListener('mouseover', () => {
-                        hoverContainer.style.display = 'block';
-                    });
-
-                    cell.addEventListener('mouseout', () => {
-                        hoverContainer.style.display = 'none';
-                    });
-                }
-            });
-        }
-
-        // Generate current month's calendar
-        const currentDate = new Date();
-        generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
-
-        // Handle form submission
-        document.getElementById('new-meeting-form').addEventListener('submit', function(e) {
-            e.preventDefault();
+        // Add a new meeting
+        function addMeeting(event) {
+            event.preventDefault();
             const userName = document.getElementById('user-name').value;
             const customerName = document.getElementById('customer-name').value;
             const meetingDate = document.getElementById('meeting-date').value;
             const meetingTime = document.getElementById('meeting-time').value;
 
-            if (!userName || userName === 'add-user') {
-                alert('Please select a valid user.');
-                return;
-            }
-            
-            // Create a new meeting object
-            const newMeeting = {
-                userName: userName,
-                customerName: customerName,
-                date: meetingDate,
-                time: meetingTime
-            };
-            
-            // Push the new meeting to Firebase
-            const newMeetingRef = database.ref('meetings').push();
-            newMeetingRef.set(newMeeting)
-                .then(() => {
-                    console.log('Meeting added successfully');
-                    this.reset();
-                    loadMeetings();
-                })
-                .catch((error) => {
-                    console.error('Error adding meeting: ', error);
-                });
-        });
+            const meetingsList = document.getElementById('meetings-list');
+            const meetingItem = document.createElement('div');
+            meetingItem.classList.add('meeting-item');
+            meetingItem.innerHTML = `
+                <strong>${customerName}</strong><br>
+                With: ${userName}<br>
+                On: ${meetingDate} at ${meetingTime}
+            `;
+            meetingsList.appendChild(meetingItem);
 
-        // Load users from Firebase
-        function loadUsers() {
-            const usersRef = database.ref('users');
-            usersRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                const userNameSelect = document.getElementById('user-name');
-                
-                // Clear existing user options except the default ones
-                userNameSelect.innerHTML = '<option value="">Select User</option><option value="add-user">Add User</option>';
-                
-                for (let id in data) {
-                    const user = data[id];
-                    const option = document.createElement('option');
-                    option.value = user.name;
-                    option.textContent = user.name;
-                    userNameSelect.appendChild(option);
-                }
-            });
+            // Mark the day on the calendar
+            const day = new Date(meetingDate).getDate();
+            const calendarDays = document.querySelectorAll('.calendar-day');
+            calendarDays[day - 1].classList.add('has-meeting');
+
+            // Reset form
+            event.target.reset();
         }
 
         // Add new user
-        function addUser() {
-            const userName = prompt('Enter your name:');
-            if (userName) {
-                const usersRef = database.ref('users');
-                const newUserRef = usersRef.push();
-                newUserRef.set({ name: userName })
-                    .then(() => {
-                        console.log('User added successfully');
-                        loadUsers();
-                        document.getElementById('user-name').value = userName;
-                    })
-                    .catch((error) => {
-                        console.error('Error adding user: ', error);
-                    });
+        function addNewUser() {
+            const newUserName = prompt("Enter new user's name:");
+            if (newUserName) {
+                const userSelect = document.getElementById('user-name');
+                const newOption = document.createElement('option');
+                newOption.value = newOption.textContent = newUserName;
+                userSelect.insertBefore(newOption, userSelect.lastElementChild);
+                userSelect.value = newUserName;
             }
         }
 
-        // Handle user selection change
+        // Event listeners
+        document.getElementById('meeting-form').addEventListener('submit', addMeeting);
         document.getElementById('user-name').addEventListener('change', function() {
             if (this.value === 'add-user') {
-                addUser();
-            } else {
-                loadMeetings();
+                addNewUser();
             }
         });
 
-        // Load meetings from Firebase
-        function loadMeetings() {
-            const selectedUser = document.getElementById('user-name').value;
-            const meetingsRef = database.ref('meetings');
-            meetingsRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                const meetingsList = document.getElementById('meetings-list');
-                meetingsList.innerHTML = '<h3>Upcoming Meetings</h3>';
-                const meetings = [];
-                for (let id in data) {
-                    const meeting = data[id];
-                    if (meeting.userName === selectedUser) {
-                        meeting.id = id;
-                        meetings.push(meeting);
-                        const meetingItem = document.createElement('div');
-                        meetingItem.className = 'meeting-item';
-                        meetingItem.innerHTML = `
-                            <strong>${meeting.customerName}</strong><br>
-                            ${meeting.date} at ${meeting.time}
-                            <div class="meeting-actions">
-                                <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
-                                <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
-                            </div>
-                        `;
-                        meetingsList.appendChild(meetingItem);
-                    }
-                }
-                updateCalendarWithMeetings(meetings);
-            });
-        }
-
-        // Edit meeting
-        function editMeeting(id) {
-            const meetingRef = database.ref('meetings/' + id);
-            meetingRef.once('value').then((snapshot) => {
-                const meeting = snapshot.val();
-                document.getElementById('user-name').value = meeting.userName;
-                document.getElementById('customer-name').value = meeting.customerName;
-                document.getElementById('meeting-date').value = meeting.date;
-                document.getElementById('meeting-time').value = meeting.time;
-
-                const form = document.getElementById('new-meeting-form');
-                form.onsubmit = function(e) {
-                    e.preventDefault();
-                    const updatedMeeting = {
-                        userName: document.getElementById('user-name').value,
-                        customerName: document.getElementById('customer-name').value,
-                        date: document.getElementById('meeting-date').value,
-                        time: document.getElementById('meeting-time').value
-                    };
-                    meetingRef.update(updatedMeeting)
-                        .then(() => {
-                            console.log('Meeting updated successfully');
-                            form.reset();
-                            form.onsubmit = null;
-                            loadMeetings();
-                        })
-                        .catch((error) => {
-                            console.error('Error updating meeting: ', error);
-                        });
-                };
-            });
-        }
-
-        // Delete meeting
-        function deleteMeeting(id) {
-            if (confirm('Are you sure you want to delete this meeting?')) {
-                const meetingRef = database.ref('meetings/' + id);
-                meetingRef.remove()
-                    .then(() => {
-                        console.log('Meeting deleted successfully');
-                        loadMeetings();
-                    })
-                    .catch((error) => {
-                        console.error('Error deleting meeting: ', error);
-                    });
-            }
-        }
-
-        // Load users and meetings when the page loads
-        loadUsers();
-        loadMeetings();
+        // Initialize calendar
+        generateCalendar();
     </script>
 </body>
 </html>

@@ -12,11 +12,18 @@
             background-color: #f0f2f5;
             margin: 0;
             padding: 20px;
+            color: #333;
         }
 
         .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .top-section {
             display: flex;
             gap: 20px;
+            margin-bottom: 20px;
         }
 
         .projects-container, .form-container {
@@ -27,9 +34,11 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        h2 {
+        h2, h3 {
             margin-top: 0;
-            color: #333;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
         }
 
         .back-button {
@@ -53,6 +62,8 @@
             list-style: none;
             padding: 0;
             margin: 0;
+            max-height: 400px;
+            overflow-y: auto;
         }
 
         .project-item {
@@ -60,35 +71,37 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #ecf0f1;
+            transition: background-color 0.3s ease;
+        }
+
+        .project-item:hover {
+            background-color: #f7f9fa;
         }
 
         .project-header {
             display: flex;
             justify-content: space-between;
             padding: 10px;
-            background-color: #ddd;
+            background-color: #34495e;
+            color: #fff;
             font-weight: bold;
-            border-bottom: 1px solid #ccc;
+            border-radius: 5px 5px 0 0;
         }
 
-        .project-header div {
+        .project-header div, .project-item div {
             flex: 1;
             text-align: center;
+            font-size: 0.9em;
         }
 
         .project-actions button {
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 16px;
-            margin-left: 10px;
-            color: #666;
+            font-size: 14px;
+            margin-left: 5px;
             transition: color 0.3s;
-        }
-
-        .project-actions button:hover {
-            color: #333;
         }
 
         .project-actions .edit {
@@ -100,12 +113,13 @@
         }
 
         input, select {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin-bottom: 15px;
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 14px;
+            box-sizing: border-box;
         }
 
         button[type="submit"] {
@@ -124,83 +138,141 @@
             background-color: #27ae60;
         }
 
-        /* Gantt Chart Styles */
+        /* Enhanced Gantt Chart Styles */
+        .gantt-container {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
         .gantt-chart {
-            margin-top: 20px;
-            border: 1px solid #ccc;
-            padding: 10px;
-            border-radius: 5px;
+            position: relative;
+            padding-top: 30px;
+        }
+
+        .timeline {
+            display: flex;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+
+        .timeline-unit {
+            flex: 0 0 50px;
+            text-align: center;
+            font-size: 12px;
+            padding: 5px 0;
+            border-right: 1px solid #eee;
+        }
+
+        .gantt-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            height: 30px;
+        }
+
+        .gantt-label {
+            width: 150px;
+            padding-right: 10px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .gantt-bar-container {
+            flex-grow: 1;
+            height: 100%;
+            position: relative;
         }
 
         .gantt-bar {
-            height: 30px;
-            margin: 5px 0;
+            height: 100%;
             background-color: #3498db;
-            border-radius: 5px;
+            border-radius: 15px;
+            position: absolute;
+            top: 0;
+        }
+
+        .gantt-bar::after {
+            content: attr(data-duration);
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
             color: #fff;
-            text-align: center;
-            line-height: 30px;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .top-section {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
 
-    <a href="Dashboard.html" class="back-button">Back to Dashboard</a>
-
-    <h2>Project Management</h2>
     <div class="container">
-        <div class="form-container">
-            <h3>Project Details</h3>
-            <form id="projectForm">
-                <label for="projectName">Project Name:</label>
-                <input type="text" id="projectName" required>
+        <a href="Dashboard.html" class="back-button">Back to Dashboard</a>
 
-                <label for="projectManager">Project Manager:</label>
-                <input type="text" id="projectManager" required>
+        <h2>Project Management</h2>
+        
+        <div class="top-section">
+            <div class="form-container">
+                <h3>Project Details</h3>
+                <form id="projectForm">
+                    <label for="projectName">Project Name:</label>
+                    <input type="text" id="projectName" required>
 
-                <label for="siteManager">Site Manager:</label>
-                <input type="text" id="siteManager" required>
+                    <label for="projectManager">Project Manager:</label>
+                    <input type="text" id="projectManager" required>
 
-                <label for="taskStart">Start Date:</label>
-                <input type="date" id="taskStart" required>
+                    <label for="siteManager">Site Manager:</label>
+                    <input type="text" id="siteManager" required>
 
-                <label for="taskEnd">End Date:</label>
-                <input type="date" id="taskEnd" required>
+                    <label for="taskStart">Start Date:</label>
+                    <input type="date" id="taskStart" required>
 
-                <label for="projectStatus">Status:</label>
-                <select id="projectStatus" required>
-                    <option value="Not Started">Not Started</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                    <option value="On Hold">On Hold</option>
-                </select>
+                    <label for="taskEnd">End Date:</label>
+                    <input type="date" id="taskEnd" required>
 
-                <button type="submit">Add Project</button>
-            </form>
-        </div>
+                    <label for="projectStatus">Status:</label>
+                    <select id="projectStatus" required>
+                        <option value="Not Started">Not Started</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="On Hold">On Hold</option>
+                    </select>
 
-        <div class="projects-container">
-            <h3>Running Projects</h3>
-            <!-- Project list header -->
-            <div class="project-header">
-                <div>Project Name</div>
-                <div>Project Manager</div>
-                <div>Site Manager</div>
-                <div>Status</div>
-                <div>Actions</div>
+                    <button type="submit">Add Project</button>
+                </form>
             </div>
-            <ul class="project-list" id="projectList">
-                <!-- Projects will be dynamically added here -->
-            </ul>
+
+            <div class="projects-container">
+                <h3>Running Projects</h3>
+                <div class="project-header">
+                    <div>Project Name</div>
+                    <div>Project Manager</div>
+                    <div>Site Manager</div>
+                    <div>Status</div>
+                    <div>Actions</div>
+                </div>
+                <ul class="project-list" id="projectList">
+                    <!-- Projects will be dynamically added here -->
+                </ul>
+            </div>
+        </div>
+
+        <div class="gantt-container">
+            <h3>Gantt Chart</h3>
+            <div class="gantt-chart" id="ganttChart">
+                <div class="timeline" id="timeline"></div>
+                <!-- Gantt bars will be dynamically added here -->
+            </div>
         </div>
     </div>
 
-    <div class="gantt-chart" id="ganttChart">
-        <h3>Gantt Chart</h3>
-        <!-- Gantt bars will be dynamically added here -->
-    </div>
-
-    <!-- Correct Firebase SDKs for HTML environments -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
@@ -220,18 +292,21 @@
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.database(app);
 
+        let projectsData = [];
+
         // Fetch existing projects from the `/calendar` directory
         db.ref('calendar').on('value', (snapshot) => {
+            projectsData = [];
             const projects = snapshot.val();
             const projectList = document.getElementById('projectList');
-            const ganttChart = document.getElementById('ganttChart');
             projectList.innerHTML = ''; // Clear the list
-            ganttChart.innerHTML = '<h3>Gantt Chart</h3>'; // Clear and reset Gantt chart
             for (const key in projects) {
                 const project = projects[key];
+                project.key = key;
+                projectsData.push(project);
                 addProjectToUI(project.projectName, project.projectManager, project.siteManager, project.status, key);
-                addGanttBar(project.projectName, project.startDate, project.endDate);
             }
+            updateGanttChart();
         });
 
         document.getElementById('projectForm').addEventListener('submit', function(e) {
@@ -275,18 +350,68 @@
             projectList.appendChild(li);
         }
 
-        function addGanttBar(name, startDate, endDate) {
+        function updateGanttChart() {
             const ganttChart = document.getElementById('ganttChart');
-            const start = new Date(startDate);
-            const end = new Date(endDate);
-            const duration = (end - start) / (1000 * 60 * 60 * 24); // Calculate duration in days
+            const timeline = document.getElementById('timeline');
+            ganttChart.innerHTML = '';
+            ganttChart.appendChild(timeline);
+            timeline.innerHTML = '';
 
-            const bar = document.createElement('div');
-            bar.className = 'gantt-bar';
-            bar.style.width = duration * 10 + 'px'; // Scale width based on duration
-            bar.textContent = `${name}: ${startDate} - ${endDate}`;
+            if (projectsData.length === 0) return;
 
-            ganttChart.appendChild(bar);
+            const startDates = projectsData.map(p => new Date(p.startDate));
+            const endDates = projectsData.map(p => new Date(p.endDate));
+            const minDate = new Date(Math.min(...startDates));
+            const maxDate = new Date(Math.max(...endDates));
+
+            const totalWeeks = Math.ceil((maxDate - minDate) / (7 * 24 * 60 * 60 * 1000));
+            const timelineWidth = totalWeeks * 50; // 50px per week
+
+            for (let i = 0; i <= totalWeeks; i++) {
+                const weekDate = new Date(minDate.getTime() + i * 7 * 24 * 60 * 60 * 1000);
+                const weekLabel = document.createElement('div');
+                weekLabel.className = 'timeline-unit';
+                weekLabel.textContent = `W${i + 1}`;
+                timeline.appendChild(weekLabel);
+
+                if (i % 4 === 0) {
+                    const monthLabel = document.createElement('div');
+                    monthLabel.className = 'timeline-unit';
+                    monthLabel.textContent = weekDate.toLocaleString('default', { month: 'short' });
+                    monthLabel.style.borderBottom = '2px solid #3498db';
+                    timeline.appendChild(monthLabel);
+                }
+            }
+
+            projectsData.forEach(project => {
+                const row = document.createElement('div');
+                row.className = 'gantt-row';
+
+                const label = document.createElement('div');
+                label.className = 'gantt-label';
+                label.textContent = project.projectName;
+
+                const barContainer = document.createElement('div');
+                barContainer.className = 'gantt-bar-container';
+                barContainer.style.width = `${timelineWidth}px`;
+
+                const bar = document.createElement('div');
+                bar.className = 'gantt-bar';
+
+                const start = new Date(project.startDate);
+                const end = new Date(project.endDate);
+                const startOffset = (start - minDate) / (7 * 24 * 60 * 60 * 1000) * 50;
+                const duration = (end - start) / (7 * 24 * 60 * 60 * 1000) * 50;
+
+                bar.style.left = `${startOffset}px`;
+                bar.style.width = `${duration}px`;
+                bar.setAttribute('data-duration', `${Math.ceil(duration / 50)} weeks`);
+
+                barContainer.appendChild(bar);
+                row.appendChild(label);
+                row.appendChild(barContainer);
+                ganttChart.appendChild(row);
+            });
         }
 
         function deleteProject(key) {

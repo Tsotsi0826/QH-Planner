@@ -3,13 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To-Do List & Reminders</title>
+    <title>To-Do and Reminders</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
             background-color: #f0f0f0;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 24px;
+            color: #333;
+        }
+        .back-button {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: #3498db;
+            font-size: 18px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .back-button i {
+            margin-right: 8px;
         }
         .container {
             display: flex;
@@ -19,6 +39,11 @@
         }
         .column {
             width: 48%;
+        }
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         h2 {
             color: #333;
@@ -36,6 +61,7 @@
             color: white;
             border: none;
             cursor: pointer;
+            margin-right: 5px;
         }
         button:hover {
             background-color: #45a049;
@@ -63,12 +89,55 @@
             display: inline-block;
             margin-left: 2px;
         }
+        .edit-btn {
+            background-color: #008CBA;
+        }
+        .delete-btn {
+            background-color: #f44336;
+        }
+        .item-actions {
+            margin-left: 10px;
+        }
+        .user-select {
+            padding: 5px;
+            margin-left: 10px;
+        }
+        .add-user-input {
+            width: 80px;
+            padding: 5px;
+            margin-right: 5px;
+        }
+        .add-user-btn {
+            padding: 5px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Page Header -->
+    <div class="header">
+        <h1>To-Do and Reminders</h1>
+    </div>
+
+    <!-- Home Icon Button -->
+    <a href="Dashboard.html" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+
     <div class="container">
         <div class="column">
-            <h2>To-Do List</h2>
+            <div class="header-section">
+                <h2>To-Do List</h2>
+                <input type="text" id="todo-add-user" class="add-user-input" placeholder="Add User">
+                <button class="add-user-btn" onclick="addUser('todo')">+</button>
+                <select id="todo-user-select" class="user-select" onchange="filterTasks()">
+                    <option value="all">View All</option>
+                </select>
+            </div>
             <div class="form-group">
                 <input type="text" id="todo-input" placeholder="Enter a new task">
                 <input type="date" id="todo-date">
@@ -82,7 +151,14 @@
             </div>
         </div>
         <div class="column">
-            <h2>Reminders</h2>
+            <div class="header-section">
+                <h2>Reminders</h2>
+                <input type="text" id="reminder-add-user" class="add-user-input" placeholder="Add User">
+                <button class="add-user-btn" onclick="addUser('reminder')">+</button>
+                <select id="reminder-user-select" class="user-select" onchange="filterReminders()">
+                    <option value="all">View All</option>
+                </select>
+            </div>
             <div class="form-group">
                 <input type="text" id="reminder-input" placeholder="Reminder Title">
                 <input type="date" id="reminder-date">
@@ -97,18 +173,19 @@
         </div>
     </div>
 
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyD82WxYqaYASCiTmcBd7nHHZMTsAJSZkIc",
-            authDomain: "qh-planner.firebaseapp.com",
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
             databaseURL: "https://qh-planner-default-rtdb.firebaseio.com",
             projectId: "qh-planner",
-            storageBucket: "qh-planner.appspot.com",
-            messagingSenderId: "847763991357",
-            appId: "1:847763991357:web:9dda19dfee4dac66a5f354"
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -116,6 +193,7 @@
 
         window.todos = {};
         window.reminders = {};
+        window.users = [];
 
         function loadData() {
             const todosRef = ref(database, 'todos');
@@ -133,21 +211,39 @@
             });
         }
 
+        function addUser(type) {
+            const input = type === 'todo' ? document.getElementById('todo-add-user') : document.getElementById('reminder-add-user');
+            const select = type === 'todo' ? document.getElementById('todo-user-select') : document.getElementById('reminder-user-select');
+            const userName = input.value.trim();
+
+            if (userName && !window.users.includes(userName)) {
+                window.users.push(userName);
+                const option = document.createElement('option');
+                option.value = userName;
+                option.textContent = userName;
+                select.appendChild(option);
+                input.value = '';
+            } else {
+                alert('User name is required or already exists.');
+            }
+        }
+
         window.addTodo = function() {
             const todoInput = document.getElementById('todo-input');
             const todoDate = document.getElementById('todo-date').value;
             const todoTime = document.getElementById('todo-time').value;
             const todoTitle = todoInput.value.trim();
-            
-            if (todoTitle === '' || !todoDate) {
-                alert('Please enter a task and date.');
+            const user = document.getElementById('todo-user-select').value;
+
+            if (todoTitle === '' || !todoDate || user === 'all') {
+                alert('Please enter a task, select a date, and assign to a user.');
                 return;
             }
 
             if (!window.todos[todoDate]) {
                 window.todos[todoDate] = [];
             }
-            window.todos[todoDate].push({ title: todoTitle, time: todoTime });
+            window.todos[todoDate].push({ title: todoTitle, time: todoTime, user });
 
             const todosRef = ref(database, 'todos');
             set(todosRef, window.todos);
@@ -162,16 +258,17 @@
             const reminderDate = document.getElementById('reminder-date').value;
             const reminderTime = document.getElementById('reminder-time').value;
             const reminderTitle = reminderInput.value.trim();
-            
-            if (!reminderTitle || !reminderDate || !reminderTime) {
-                alert('Please fill in all reminder fields.');
+            const user = document.getElementById('reminder-user-select').value;
+
+            if (!reminderTitle || !reminderDate || !reminderTime || user === 'all') {
+                alert('Please fill in all reminder fields and assign to a user.');
                 return;
             }
 
             if (!window.reminders[reminderDate]) {
                 window.reminders[reminderDate] = [];
             }
-            window.reminders[reminderDate].push({ title: reminderTitle, time: reminderTime });
+            window.reminders[reminderDate].push({ title: reminderTitle, time: reminderTime, user });
 
             const remindersRef = ref(database, 'reminders');
             set(remindersRef, window.reminders);
@@ -181,26 +278,54 @@
             document.getElementById('reminder-time').value = '';
         }
 
+        function filterTasks() {
+            updateTodoList();
+        }
+
+        function filterReminders() {
+            updateReminderList();
+        }
+
         function updateTodoList() {
             const todoList = document.getElementById('todo-list');
+            const selectedUser = document.getElementById('todo-user-select').value;
             todoList.innerHTML = '';
             Object.keys(window.todos).forEach(date => {
-                window.todos[date].forEach(todo => {
-                    const li = document.createElement('li');
-                    li.textContent = `${todo.title} - ${date} ${todo.time}`;
-                    todoList.appendChild(li);
+                window.todos[date].forEach((todo, index) => {
+                    if (selectedUser === 'all' || todo.user === selectedUser) {
+                        const li = document.createElement('li');
+                        li.textContent = `${todo.title} - ${date} ${todo.time} (${todo.user})`;
+                        const actionsSpan = document.createElement('span');
+                        actionsSpan.className = 'item-actions';
+                        actionsSpan.innerHTML = `
+                            <button class="edit-btn" onclick="editTodo('${date}', ${index})">Edit</button>
+                            <button class="delete-btn" onclick="deleteTodo('${date}', ${index})">Delete</button>
+                        `;
+                        li.appendChild(actionsSpan);
+                        todoList.appendChild(li);
+                    }
                 });
             });
         }
 
         function updateReminderList() {
             const reminderList = document.getElementById('reminder-list');
+            const selectedUser = document.getElementById('reminder-user-select').value;
             reminderList.innerHTML = '';
             Object.keys(window.reminders).forEach(date => {
-                window.reminders[date].forEach(reminder => {
-                    const li = document.createElement('li');
-                    li.textContent = `${reminder.title} - ${date} ${reminder.time}`;
-                    reminderList.appendChild(li);
+                window.reminders[date].forEach((reminder, index) => {
+                    if (selectedUser === 'all' || reminder.user === selectedUser) {
+                        const li = document.createElement('li');
+                        li.textContent = `${reminder.title} - ${date} ${reminder.time} (${reminder.user})`;
+                        const actionsSpan = document.createElement('span');
+                        actionsSpan.className = 'item-actions';
+                        actionsSpan.innerHTML = `
+                            <button class="edit-btn" onclick="editReminder('${date}', ${index})">Edit</button>
+                            <button class="delete-btn" onclick="deleteReminder('${date}', ${index})">Delete</button>
+                        `;
+                        li.appendChild(actionsSpan);
+                        reminderList.appendChild(li);
+                    }
                 });
             });
         }
@@ -240,9 +365,16 @@
                         break;
                     } else {
                         const currentDate = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                        let hasDot = (window.todos[currentDate] && window.todos[currentDate].length > 0) || 
-                                     (window.reminders[currentDate] && window.reminders[currentDate].length > 0);
-                        calendarHTML += `<td>${day}${hasDot ? '<span class="dot"></span>' : ''}</td>`;
+                        let todoCount = window.todos[currentDate] ? window.todos[currentDate].length : 0;
+                        let reminderCount = window.reminders[currentDate] ? window.reminders[currentDate].length : 0;
+                        let cellContent = `${day}`;
+                        if (todoCount > 0) {
+                            cellContent += `<br><span class="dot" title="${todoCount} todo(s)"></span>`;
+                        }
+                        if (reminderCount > 0) {
+                            cellContent += `<br><span class="dot" style="background-color: #f44336;" title="${reminderCount} reminder(s)"></span>`;
+                        }
+                        calendarHTML += `<td>${cellContent}</td>`;
                         day++;
                     }
                 }

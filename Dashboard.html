@@ -116,27 +116,26 @@
             <div class="tile-title">Quotes</div>
         </div>
     </div>
+
     <script>
         function showDetails(category) {
-            // Map of categories to their corresponding HTML files on GitHub
+            // Map of categories to their corresponding HTML files based on your GitHub file structure
             const categoryFiles = {
-                'create-project': 'Create%20New%20Project.html', // Link to the Create New Project page
-                'current-projects': 'Current%20Projects.html', // Updated link to the Current Projects page
-                'upcoming-projects': '', // To be implemented
-                'todo-list': 'To%20Do%20List.html', // Correct link to the To-Do List & Reminders page
-                'meetings': 'Meetings.html', // Updated link to the Meetings page
-                'calendar-view': '', // To be implemented
-                'quotes': '' // To be implemented
+                'create-project': 'Create%20New%20Project.html',
+                'current-projects': 'Current%20Project.html', 
+                'upcoming-projects': '', // Placeholder if not implemented
+                'todo-list': 'To%20Do%20List.html', 
+                'meetings': 'Meetings.html', 
+                'calendar-view': 'Calendar.html', // Linked correctly to Calendar.html file
+                'quotes': 'Quotes.html' // Update this with the correct link when implemented
             };
 
-            // Get the corresponding file for the category
             const file = categoryFiles[category];
 
             if (file) {
                 // Navigate to the corresponding HTML file
                 window.location.href = file;
             } else {
-                // Fallback alert for any categories without a corresponding file
                 alert(`Showing details for ${category}. This functionality will be implemented later.`);
             }
         }

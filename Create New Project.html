@@ -149,6 +149,7 @@
             border-left: 4px solid var(--primary-color);
             border-radius: 5px;
             box-shadow: 0 2px 4px var(--shadow-color);
+            cursor: pointer;
         }
         .client-icons {
             display: flex;
@@ -389,6 +390,7 @@
                                     <i class="fas fa-trash-alt" title="Delete" onclick="deleteProject('${key}')"></i>
                                 </div>
                             `;
+                            clientItem.onclick = () => populateFormFields(project, key); // Add click event
                             clientsList.appendChild(clientItem);
                         } else {
                             console.warn('Project data missing projectName:', project);
@@ -402,6 +404,17 @@
                 console.error('Error fetching data from Firebase:', error);
                 showMessage('Error loading clients. Please check your connection.', 'error');
             });
+        }
+
+        // Function to populate form fields when a client is clicked
+        function populateFormFields(project, key) {
+            document.getElementById('projectName').value = project.projectName || '';
+            document.getElementById('projectAddress').value = project.projectAddress || '';
+            document.getElementById('erfNo').value = project.erfNo || '';
+            document.getElementById('clientName').value = project.clientName || '';
+            document.getElementById('clientSurname').value = project.clientSurname || '';
+            document.getElementById('clientCell').value = project.clientCell || '';
+            document.getElementById('notes').value = project.notes || '';
         }
 
         // Function to delete a project from Firebase

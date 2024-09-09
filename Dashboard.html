@@ -63,12 +63,12 @@
             font-weight: normal;
             color: var(--text-color);
         }
-        .create-project {
+        .projects {
             background-color: var(--create-project-color);
             color: white;
         }
-        .create-project .tile-icon,
-        .create-project .tile-title {
+        .projects .tile-icon,
+        .projects .tile-title {
             color: white;
         }
         /* Media Query for Responsive Layout */
@@ -87,13 +87,9 @@
     <h1>Construction Project Dashboard</h1>
     
     <div class="dashboard">
-        <div class="tile create-project" onclick="showDetails('create-project')" aria-label="Create a Project">
-            <div class="tile-icon">➕</div>
-            <div class="tile-title">Create a Project</div>
-        </div>
-        <div class="tile" onclick="showDetails('current-projects')" aria-label="Current Projects">
-            <div class="tile-icon">👷</div>
-            <div class="tile-title">Current Projects</div>
+        <div class="tile projects" onclick="showDetails('projects')" aria-label="Projects">
+            <div class="tile-icon">📁</div>
+            <div class="tile-title">Projects</div>
         </div>
         <div class="tile" onclick="showDetails('upcoming-projects')" aria-label="Upcoming Projects">
             <div class="tile-icon">📅</div>
@@ -117,11 +113,10 @@
         function showDetails(category) {
             // Map of categories to their corresponding HTML files based on your GitHub file structure
             const categoryFiles = {
-                'create-project': 'Create%20New%20Project.html',
-                'current-projects': 'Current%20Project.html', 
+                'projects': 'Projects.html',
                 'upcoming-projects': '', // Placeholder if not implemented
                 'meetings': 'Meetings.html', 
-                'calendar-view': 'Calendar.html', // Linked correctly to Calendar.html file
+                'calendar-view': 'Calendar.html',
                 'quotes': 'Quotes.html' // Update this with the correct link when implemented
             };
 

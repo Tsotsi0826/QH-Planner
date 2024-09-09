@@ -247,6 +247,8 @@
                         userSelect.insertBefore(newOption, userSelect.lastElementChild);
                         userSelect.value = newUserName;
                         console.log('User added successfully');
+                        loadMeetings(newUserName);
+                        loadTodos(newUserName);
                     })
                     .catch((error) => {
                         console.error('Error adding user: ', error);
@@ -273,40 +275,68 @@
                 .then(() => {
                     console.log('Meeting added successfully');
                     event.target.reset();
-                    loadMeetings();
+                    loadMeetings(userName);
                 })
                 .catch((error) => {
                     console.error('Error adding meeting: ', error);
                 });
         }
 
-        // Load meetings from Firebase
-        function loadMeetings() {
+        // Load meetings from Firebase based on selected user
+        function loadMeetings(selectedUser) {
             const meetingsRef = database.ref('meetings');
             meetingsRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 const meetingsList = document.getElementById('meetings-list');
                 meetingsList.innerHTML = '<h2>Upcoming Meetings</h2>';
+                document.querySelectorAll('.calendar-day').forEach(day => {
+                    day.classList.remove('has-meeting');
+                });
                 for (let id in data) {
                     const meeting = data[id];
-                    const meetingItem = document.createElement('div');
-                    meetingItem.className = 'meeting-item';
-                    meetingItem.innerHTML = `
-                        <strong>${meeting.customerName}</strong><br>
-                        With: ${meeting.userName}<br>
-                        On: ${meeting.date} at ${meeting.time}
-                        <div>
-                            <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
-                            <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
-                        </div>
-                    `;
-                    meetingsList.appendChild(meetingItem);
+                    if (meeting.userName === selectedUser) {
+                        const meetingItem = document.createElement('div');
+                        meetingItem.className = 'meeting-item';
+                        meetingItem.innerHTML = `
+                            <strong>${meeting.customerName}</strong><br>
+                            With: ${meeting.userName}<br>
+                            On: ${meeting.date} at ${meeting.time}
+                            <div>
+                                <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
+                                <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
+                            </div>
+                        `;
+                        meetingsList.appendChild(meetingItem);
 
-                    // Mark the day on the calendar
-                    const day = new Date(meeting.date).getDate();
-                    const calendarDays = document.querySelectorAll('.calendar-day');
-                    if (calendarDays[day - 1]) {
-                        calendarDays[day - 1].classList.add('has-meeting');
+                        // Mark the day on the calendar
+                        const day = new Date(meeting.date).getDate();
+                        const calendarDays = document.querySelectorAll('.calendar-day');
+                        if (calendarDays[day - 1]) {
+                            calendarDays[day - 1].classList.add('has-meeting');
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load todos from Firebase based on selected user
+        function loadTodos(selectedUser) {
+            const todosRef = database.ref('todos');
+            todosRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                const todosList = document.getElementById('todos-list');
+                todosList.innerHTML = '';
+                for (let id in data) {
+                    const todo = data[id];
+                    if (todo.userName === selectedUser) {
+                        const todoItem = document.createElement('div');
+                        todoItem.className = 'todo-item';
+                        todoItem.innerHTML = `
+                            <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo('${id}', this.checked)">
+                            <span>${todo.text}</span>
+                            <button class="delete-btn" onclick="deleteTodo('${id}')">Delete</button>
+                        `;
+                        todosList.appendChild(todoItem);
                     }
                 }
             });
@@ -336,7 +366,7 @@
                             console.log('Meeting updated successfully');
                             form.reset();
                             form.onsubmit = addMeeting;
-                            loadMeetings();
+                            loadMeetings(updatedMeeting.userName);
                         })
                         .catch((error) => {
                             console.error('Error updating meeting: ', error);
@@ -352,7 +382,7 @@
                 meetingRef.remove()
                     .then(() => {
                         console.log('Meeting deleted successfully');
-                        loadMeetings();
+                        loadMeetings(document.getElementById('user-name').value);
                     })
                     .catch((error) => {
                         console.error('Error deleting meeting: ', error);
@@ -364,41 +394,22 @@
         function addTodo(event) {
             event.preventDefault();
             const todoText = document.getElementById('todo-text').value;
+            const userName = document.getElementById('user-name').value;
             const newTodo = {
                 text: todoText,
-                completed: false
+                completed: false,
+                userName: userName
             };
 
             database.ref('todos').push(newTodo)
                 .then(() => {
                     console.log('Todo added successfully');
                     event.target.reset();
-                    loadTodos();
+                    loadTodos(userName);
                 })
                 .catch((error) => {
                     console.error('Error adding todo: ', error);
                 });
-        }
-
-        // Load todos from Firebase
-        function loadTodos() {
-            const todosRef = database.ref('todos');
-            todosRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                const todosList = document.getElementById('todos-list');
-                todosList.innerHTML = '';
-                for (let id in data) {
-                    const todo = data[id];
-                    const todoItem = document.createElement('div');
-                    todoItem.className = 'todo-item';
-                    todoItem.innerHTML = `
-                        <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo('${id}', this.checked)">
-                        <span>${todo.text}</span>
-                        <button class="delete-btn" onclick="deleteTodo('${id}')">Delete</button>
-                    `;
-                    todosList.appendChild(todoItem);
-                }
-            });
         }
 
         // Toggle todo completion
@@ -419,6 +430,7 @@
             todoRef.remove()
                 .then(() => {
                     console.log('Todo deleted successfully');
+                    loadTodos(document.getElementById('user-name').value);
                 })
                 .catch((error) => {
                     console.error('Error deleting todo: ', error);
@@ -429,15 +441,17 @@
         document.getElementById('meeting-form').addEventListener('submit', addMeeting);
         document.getElementById('todo-form').addEventListener('submit', addTodo);
         document.getElementById('user-name').addEventListener('change', function() {
-            if (this.value === 'add-user') {
+            const selectedUser = this.value;
+            if (selectedUser === 'add-user') {
                 addNewUser();
+            } else if (selectedUser) {
+                loadMeetings(selectedUser);
+                loadTodos(selectedUser);
             }
         });
 
         // Initialize
         generateCalendar();
-        loadMeetings();
-        loadTodos();
         loadUsers(); // Load users when the page loads
     </script>
 </body>

@@ -110,7 +110,7 @@
         // Load upcoming projects from Firebase
         function loadUpcomingProjects() {
             const projectsDashboard = document.getElementById('projectsDashboard');
-            const projectsRef = database.ref('currentProjects'); // Assuming this is where the data is moved
+            const projectsRef = database.ref('upcomingProjects'); // Ensure this matches the node where data is stored
 
             projectsRef.on('value', (snapshot) => {
                 projectsDashboard.innerHTML = ''; // Clear previous entries

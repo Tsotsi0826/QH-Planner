@@ -468,21 +468,30 @@
             const calendarUrl = document.getElementById('calendar-url').value;
             const selectedUser = document.getElementById('user-name').value;
 
-            if (calendarUrl && selectedUser) {
+            // Ensure a user is selected before adding the calendar URL
+            if (!selectedUser || selectedUser === 'add-user') {
+                alert('Please select a user from the dropdown before adding your calendar URL.');
+                return;
+            }
+
+            if (calendarUrl) {
                 const userRef = database.ref('users').orderByChild('name').equalTo(selectedUser);
                 userRef.once('value', (snapshot) => {
-                    const userKey = Object.keys(snapshot.val())[0];
-                    database.ref('users/' + userKey).update({ calendarUrl: calendarUrl })
-                        .then(() => {
-                            displayCalendarLink(calendarUrl);
-                            console.log('Google Calendar link saved for user:', selectedUser);
-                        })
-                        .catch((error) => {
-                            console.error('Error saving calendar link: ', error);
-                        });
+                    const data = snapshot.val();
+                    if (data) {
+                        const userKey = Object.keys(data)[0];
+                        database.ref('users/' + userKey).update({ calendarUrl: calendarUrl })
+                            .then(() => {
+                                displayCalendarLink(calendarUrl);
+                                console.log('Google Calendar link saved for user:', selectedUser);
+                            })
+                            .catch((error) => {
+                                console.error('Error saving calendar link: ', error);
+                            });
+                    }
                 });
             } else {
-                alert('Please paste a valid Google Calendar URL and select a user.');
+                alert('Please paste a valid Google Calendar URL.');
             }
         });
 
@@ -505,12 +514,14 @@
                 const userRef = database.ref('users').orderByChild('name').equalTo(selectedUser);
                 userRef.once('value', (snapshot) => {
                     const data = snapshot.val();
-                    const userKey = Object.keys(data)[0];
-                    const calendarUrl = data[userKey].calendarUrl;
-                    if (calendarUrl) {
-                        displayCalendarLink(calendarUrl);
-                    } else {
-                        document.getElementById('calendar-link-container').innerHTML = '';
+                    if (data) {
+                        const userKey = Object.keys(data)[0];
+                        const calendarUrl = data[userKey].calendarUrl;
+                        if (calendarUrl) {
+                            displayCalendarLink(calendarUrl);
+                        } else {
+                            document.getElementById('calendar-link-container').innerHTML = '';
+                        }
                     }
                 });
             }

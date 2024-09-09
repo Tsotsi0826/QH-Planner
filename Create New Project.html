@@ -332,8 +332,8 @@
                 await newProjectRef.set(projectData);
 
                 showMessage('Project saved successfully!', 'success');
-                form.reset(); // Clear the form after successful save
-                loadClients(); // Refresh clients list after saving
+                form.reset(); 
+                loadClients(); 
             } catch (error) {
                 console.error('Error saving data:', error);
                 showMessage('Error saving data. Please try again.', 'error');
@@ -357,12 +357,10 @@
 
         function loadClients() {
             const clientsList = document.getElementById('clientsList');
-            clientsList.innerHTML = ''; // Clear existing list
+            clientsList.innerHTML = ''; 
 
-            // Reference to the 'projects' path in your Firebase Realtime Database
             const clientsRef = firebase.database().ref('projects');
             
-            // Listen for changes in the 'projects' path
             clientsRef.on('value', (snapshot) => {
                 console.log('Fetching data from Firebase...'); 
                 if (snapshot.exists()) {
@@ -404,7 +402,7 @@
         }
 
         // Function to move project to Upcoming Projects
-        function moveToUpcomingProjects(key) {
+        window.moveToUpcomingProjects = function (key) {
             const projectRef = firebase.database().ref(`projects/${key}`);
             projectRef.once('value').then(snapshot => {
                 const projectData = snapshot.val();
@@ -423,7 +421,7 @@
         }
 
         // Function to move project to Current Projects
-        function moveToCurrentProjects(key) {
+        window.moveToCurrentProjects = function (key) {
             const projectRef = firebase.database().ref(`projects/${key}`);
             projectRef.once('value').then(snapshot => {
                 const projectData = snapshot.val();

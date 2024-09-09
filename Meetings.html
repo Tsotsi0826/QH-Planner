@@ -210,47 +210,103 @@
             }
         }
 
-        // Load meetings from Firebase based on the selected user
-        function loadMeetings() {
-            const selectedUser = document.getElementById('user-name').value;
-            const meetingsRef = database.ref('meetings');
+        // Load users from Firebase and populate the dropdown
+        function loadUsers() {
+            const userSelect = document.getElementById('user-name');
+            const usersRef = database.ref('users');
 
-            // Clear current meetings display and calendar highlights
-            const meetingsList = document.getElementById('meetings-list');
-            meetingsList.innerHTML = '<h2>Upcoming Meetings</h2>';
-            document.querySelectorAll('.calendar-day').forEach(day => {
-                day.classList.remove('has-meeting');
-            });
+            // Clear existing options except the default ones
+            userSelect.innerHTML = `
+                <option value="">Select User</option>
+                <option value="add-user">Add New User</option>
+            `;
 
-            // Do not display meetings if no user is selected
-            if (!selectedUser || selectedUser === 'add-user') {
-                return;
-            }
-
-            meetingsRef.on('value', (snapshot) => {
+            // Load users from Firebase and add them to the dropdown
+            usersRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 for (let id in data) {
-                    const meeting = data[id];
-                    if (meeting.userName === selectedUser) {
-                        const meetingItem = document.createElement('div');
-                        meetingItem.className = 'meeting-item';
-                        meetingItem.innerHTML = `
-                            <strong>${meeting.customerName}</strong><br>
-                            With: ${meeting.userName}<br>
-                            On: ${meeting.date} at ${meeting.time}
-                            <div>
-                                <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
-                                <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
-                            </div>
-                        `;
-                        meetingsList.appendChild(meetingItem);
+                    const userOption = document.createElement('option');
+                    userOption.value = data[id].name;
+                    userOption.textContent = data[id].name;
+                    userSelect.insertBefore(userOption, userSelect.lastElementChild);
+                }
+            });
+        }
 
-                        // Mark the day on the calendar
-                        const day = new Date(meeting.date).getDate();
-                        const calendarDays = document.querySelectorAll('.calendar-day');
-                        if (calendarDays[day - 1]) {
-                            calendarDays[day - 1].classList.add('has-meeting');
-                        }
+        // Add new user and save to Firebase
+        function addNewUser() {
+            const newUserName = prompt("Enter new user's name:");
+            if (newUserName) {
+                const userRef = database.ref('users').push();
+                userRef.set({ name: newUserName })
+                    .then(() => {
+                        const userSelect = document.getElementById('user-name');
+                        const newOption = document.createElement('option');
+                        newOption.value = newUserName;
+                        newOption.textContent = newUserName;
+                        userSelect.insertBefore(newOption, userSelect.lastElementChild);
+                        userSelect.value = newUserName;
+                        console.log('User added successfully');
+                    })
+                    .catch((error) => {
+                        console.error('Error adding user: ', error);
+                    });
+            }
+        }
+
+        // Add a new meeting
+        function addMeeting(event) {
+            event.preventDefault();
+            const userName = document.getElementById('user-name').value;
+            const customerName = document.getElementById('customer-name').value;
+            const meetingDate = document.getElementById('meeting-date').value;
+            const meetingTime = document.getElementById('meeting-time').value;
+
+            const newMeeting = {
+                userName: userName,
+                customerName: customerName,
+                date: meetingDate,
+                time: meetingTime
+            };
+
+            database.ref('meetings').push(newMeeting)
+                .then(() => {
+                    console.log('Meeting added successfully');
+                    event.target.reset();
+                    loadMeetings();
+                })
+                .catch((error) => {
+                    console.error('Error adding meeting: ', error);
+                });
+        }
+
+        // Load meetings from Firebase
+        function loadMeetings() {
+            const meetingsRef = database.ref('meetings');
+            meetingsRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                const meetingsList = document.getElementById('meetings-list');
+                meetingsList.innerHTML = '<h2>Upcoming Meetings</h2>';
+                for (let id in data) {
+                    const meeting = data[id];
+                    const meetingItem = document.createElement('div');
+                    meetingItem.className = 'meeting-item';
+                    meetingItem.innerHTML = `
+                        <strong>${meeting.customerName}</strong><br>
+                        With: ${meeting.userName}<br>
+                        On: ${meeting.date} at ${meeting.time}
+                        <div>
+                            <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
+                            <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
+                        </div>
+                    `;
+                    meetingsList.appendChild(meetingItem);
+
+                    // Mark the day on the calendar
+                    const day = new Date(meeting.date).getDate();
+                    const calendarDays = document.querySelectorAll('.calendar-day');
+                    if (calendarDays[day - 1]) {
+                        calendarDays[day - 1].classList.add('has-meeting');
                     }
                 }
             });
@@ -302,32 +358,6 @@
                         console.error('Error deleting meeting: ', error);
                     });
             }
-        }
-
-        // Add a new meeting
-        function addMeeting(event) {
-            event.preventDefault();
-            const userName = document.getElementById('user-name').value;
-            const customerName = document.getElementById('customer-name').value;
-            const meetingDate = document.getElementById('meeting-date').value;
-            const meetingTime = document.getElementById('meeting-time').value;
-
-            const newMeeting = {
-                userName: userName,
-                customerName: customerName,
-                date: meetingDate,
-                time: meetingTime
-            };
-
-            database.ref('meetings').push(newMeeting)
-                .then(() => {
-                    console.log('Meeting added successfully');
-                    event.target.reset();
-                    loadMeetings();
-                })
-                .catch((error) => {
-                    console.error('Error adding meeting: ', error);
-                });
         }
 
         // Add new todo
@@ -395,32 +425,20 @@
                 });
         }
 
-        // Add new user
-        function addNewUser() {
-            const newUserName = prompt("Enter new user's name:");
-            if (newUserName) {
-                const userSelect = document.getElementById('user-name');
-                const newOption = document.createElement('option');
-                newOption.value = newOption.textContent = newUserName;
-                userSelect.insertBefore(newOption, userSelect.lastElementChild);
-                userSelect.value = newUserName;
-            }
-        }
-
         // Event listeners
         document.getElementById('meeting-form').addEventListener('submit', addMeeting);
         document.getElementById('todo-form').addEventListener('submit', addTodo);
         document.getElementById('user-name').addEventListener('change', function() {
             if (this.value === 'add-user') {
                 addNewUser();
-            } else {
-                loadMeetings();
             }
         });
 
         // Initialize
         generateCalendar();
+        loadMeetings();
         loadTodos();
+        loadUsers(); // Load users when the page loads
     </script>
 </body>
 </html>

@@ -65,7 +65,8 @@
             color: var(--primary-color);
         }
         .back-button {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             background-color: var(--primary-color);
             color: white;
             padding: 10px 20px;
@@ -77,10 +78,17 @@
         .back-button:hover {
             background-color: #2980b9;
         }
+        .back-button .home-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-button">Back to Dashboard</a>
+    <a href="Dashboard.html" class="back-button">
+        <span class="home-icon">🏠</span>
+        Back to Dashboard
+    </a>
     <h1>Current Projects</h1>
     <div id="projectContainer" class="project-container">
         <div class="loading">Loading projects...</div>

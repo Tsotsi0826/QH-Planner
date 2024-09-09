@@ -386,7 +386,7 @@
                                 <span>${project.projectName}</span>
                                 <div class="client-icons">
                                     <i class="fas fa-arrow-right" title="Move to Upcoming Project" onclick="moveToUpcomingProjects('${key}')"></i>
-                                    <i class="fas fa-calendar-alt" title="Move to Current Project"></i>
+                                    <i class="fas fa-calendar-alt" title="Move to Current Project" onclick="moveToCurrentProjects('${key}')"></i>
                                     <i class="fas fa-trash-alt" title="Delete" onclick="deleteProject('${key}')"></i>
                                 </div>
                             `;
@@ -415,6 +415,23 @@
                     // Copy the project data to the 'upcomingProjects' node
                     firebase.database().ref('upcomingProjects').push(projectData)
                         .then(() => showMessage('Project moved to Upcoming Projects.', 'success'))
+                        .catch(error => console.error('Error moving project:', error));
+                }
+            }).catch(error => {
+                console.error('Error fetching project data:', error);
+                showMessage('Error fetching project data. Please try again.', 'error');
+            });
+        }
+
+        // Function to move project to Current Projects
+        function moveToCurrentProjects(key) {
+            const projectRef = firebase.database().ref(`projects/${key}`);
+            projectRef.once('value').then(snapshot => {
+                const projectData = snapshot.val();
+                if (projectData) {
+                    // Copy the project data to the 'currentProjects' node
+                    firebase.database().ref('currentProjects').push(projectData)
+                        .then(() => showMessage('Project moved to Current Projects.', 'success'))
                         .catch(error => console.error('Error moving project:', error));
                 }
             }).catch(error => {

@@ -260,7 +260,7 @@
             const newUserName = prompt("Enter new user's name:");
             if (newUserName) {
                 const userRef = database.ref('users').push();
-                userRef.set({ name: newUserName })
+                userRef.set({ name: newUserName, calendarUrl: "" })
                     .then(() => {
                         const userSelect = document.getElementById('user-name');
                         const newOption = document.createElement('option');
@@ -463,23 +463,38 @@
                 });
         }
 
-        // Handle adding Google Calendar link
+        // Handle adding and saving Google Calendar link for the selected user
         document.getElementById('add-calendar-btn').addEventListener('click', function() {
             const calendarUrl = document.getElementById('calendar-url').value;
-            if (calendarUrl) {
-                const calendarLinkContainer = document.getElementById('calendar-link-container');
-                calendarLinkContainer.innerHTML = `
-                    <a href="${calendarUrl}" target="_blank" class="calendar-link-btn">Open Google Calendar</a>
-                `;
-                console.log('Google Calendar link added');
+            const selectedUser = document.getElementById('user-name').value;
+
+            if (calendarUrl && selectedUser) {
+                const userRef = database.ref('users').orderByChild('name').equalTo(selectedUser);
+                userRef.once('value', (snapshot) => {
+                    const userKey = Object.keys(snapshot.val())[0];
+                    database.ref('users/' + userKey).update({ calendarUrl: calendarUrl })
+                        .then(() => {
+                            displayCalendarLink(calendarUrl);
+                            console.log('Google Calendar link saved for user:', selectedUser);
+                        })
+                        .catch((error) => {
+                            console.error('Error saving calendar link: ', error);
+                        });
+                });
             } else {
-                alert('Please paste a valid Google Calendar URL.');
+                alert('Please paste a valid Google Calendar URL and select a user.');
             }
         });
 
-        // Event listeners
-        document.getElementById('meeting-form').addEventListener('submit', addMeeting);
-        document.getElementById('todo-form').addEventListener('submit', addTodo);
+        // Display the stored Google Calendar link
+        function displayCalendarLink(calendarUrl) {
+            const calendarLinkContainer = document.getElementById('calendar-link-container');
+            calendarLinkContainer.innerHTML = `
+                <a href="${calendarUrl}" target="_blank" class="calendar-link-btn">Open Google Calendar</a>
+            `;
+        }
+
+        // Load Google Calendar link when a user is selected
         document.getElementById('user-name').addEventListener('change', function() {
             const selectedUser = this.value;
             if (selectedUser === 'add-user') {
@@ -487,6 +502,17 @@
             } else if (selectedUser) {
                 loadMeetings(selectedUser);
                 loadTodos(selectedUser);
+                const userRef = database.ref('users').orderByChild('name').equalTo(selectedUser);
+                userRef.once('value', (snapshot) => {
+                    const data = snapshot.val();
+                    const userKey = Object.keys(data)[0];
+                    const calendarUrl = data[userKey].calendarUrl;
+                    if (calendarUrl) {
+                        displayCalendarLink(calendarUrl);
+                    } else {
+                        document.getElementById('calendar-link-container').innerHTML = '';
+                    }
+                });
             }
         });
 

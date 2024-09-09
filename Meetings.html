@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meetings and Todos - Construction Project</title>
+    <title>Meetings and To do's & Reminders - Construction Project</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -172,16 +172,24 @@
             </div>
         </div>
         <div class="todos-container">
-            <h2>Todos</h2>
+            <h2>To do's & Reminders</h2>
             <form id="todo-form">
                 <div class="form-group">
                     <label for="todo-text">New Todo:</label>
                     <input type="text" id="todo-text" required>
                 </div>
+                <div class="form-group">
+                    <label for="todo-date">Date:</label>
+                    <input type="date" id="todo-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="todo-time">Time:</label>
+                    <input type="time" id="todo-time" required>
+                </div>
                 <button type="submit">Add Todo</button>
             </form>
             <div id="todos-list">
-                <!-- Todos list will be populated by JavaScript -->
+                <!-- To do's & Reminders list will be populated by JavaScript -->
             </div>
         </div>
     </div>
@@ -333,7 +341,7 @@
                         todoItem.className = 'todo-item';
                         todoItem.innerHTML = `
                             <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo('${id}', this.checked)">
-                            <span>${todo.text}</span>
+                            <span>${todo.text} - ${todo.date} at ${todo.time}</span>
                             <button class="delete-btn" onclick="deleteTodo('${id}')">Delete</button>
                         `;
                         todosList.appendChild(todoItem);
@@ -395,10 +403,14 @@
             event.preventDefault();
             const todoText = document.getElementById('todo-text').value;
             const userName = document.getElementById('user-name').value;
+            const todoDate = document.getElementById('todo-date').value;
+            const todoTime = document.getElementById('todo-time').value;
             const newTodo = {
                 text: todoText,
                 completed: false,
-                userName: userName
+                userName: userName,
+                date: todoDate,
+                time: todoTime
             };
 
             database.ref('todos').push(newTodo)

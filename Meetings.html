@@ -124,6 +124,13 @@
         .delete-btn {
             background-color: #e74c3c;
         }
+        .calendar-url-container {
+            margin-top: 20px;
+        }
+        .calendar-url-container input {
+            margin-right: 10px;
+            width: calc(100% - 110px);
+        }
     </style>
 </head>
 <body>
@@ -160,6 +167,13 @@
                 </div>
                 <button type="submit">Schedule Meeting</button>
             </form>
+
+            <!-- Google Calendar URL input and button -->
+            <div class="calendar-url-container">
+                <input type="url" id="calendar-url" placeholder="Paste your Google Calendar URL">
+                <button id="add-calendar-btn">Add Calendar</button>
+            </div>
+            <div id="calendar-link-container"></div>
         </div>
         <div class="calendar-container">
             <h2>Meeting Calendar</h2>
@@ -448,6 +462,20 @@
                     console.error('Error deleting todo: ', error);
                 });
         }
+
+        // Handle adding Google Calendar link
+        document.getElementById('add-calendar-btn').addEventListener('click', function() {
+            const calendarUrl = document.getElementById('calendar-url').value;
+            if (calendarUrl) {
+                const calendarLinkContainer = document.getElementById('calendar-link-container');
+                calendarLinkContainer.innerHTML = `
+                    <a href="${calendarUrl}" target="_blank" class="calendar-link-btn">Open Google Calendar</a>
+                `;
+                console.log('Google Calendar link added');
+            } else {
+                alert('Please paste a valid Google Calendar URL.');
+            }
+        });
 
         // Event listeners
         document.getElementById('meeting-form').addEventListener('submit', addMeeting);

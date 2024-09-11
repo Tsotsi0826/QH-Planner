@@ -267,6 +267,22 @@
                         <label for="clientCell">Client Cell Number</label>
                         <input type="tel" id="clientCell" name="clientCell">
                     </div>
+                    <div class="form-group">
+                        <label for="architectName">Architect Name</label>
+                        <input type="text" id="architectName" name="architectName">
+                    </div>
+                    <div class="form-group">
+                        <label for="architectNumber">Architect Number</label>
+                        <input type="text" id="architectNumber" name="architectNumber">
+                    </div>
+                    <div class="form-group">
+                        <label for="engineerName">Engineer</label>
+                        <input type="text" id="engineerName" name="engineerName">
+                    </div>
+                    <div class="form-group">
+                        <label for="engineerNumber">Engineer Number</label>
+                        <input type="text" id="engineerNumber" name="engineerNumber">
+                    </div>
                 </div>
                 
                 <div class="column">
@@ -332,42 +348,6 @@
             }
         };
 
-        window.moveToUpcomingProjects = function (key) {
-            const projectRef = firebase.database().ref(`projects/${key}`);
-            projectRef.once('value').then(snapshot => {
-                const projectData = snapshot.val();
-                if (projectData) {
-                    firebase.database().ref('upcomingProjects').push(projectData)
-                        .then(() => showMessage('Project moved to Upcoming Projects.', 'success'))
-                        .catch(error => {
-                            console.error('Error moving project:', error);
-                            showMessage('Error moving project. Please try again.', 'error');
-                        });
-                }
-            }).catch(error => {
-                console.error('Error fetching project data:', error);
-                showMessage('Error fetching project data. Please try again.', 'error');
-            });
-        };
-
-        window.moveToCurrentProjects = function (key) {
-            const projectRef = firebase.database().ref(`projects/${key}`);
-            projectRef.once('value').then(snapshot => {
-                const projectData = snapshot.val();
-                if (projectData) {
-                    firebase.database().ref('currentProjects').push(projectData)
-                        .then(() => showMessage('Project moved to Current Projects.', 'success'))
-                        .catch(error => {
-                            console.error('Error moving project:', error);
-                            showMessage('Error moving project. Please try again.', 'error');
-                        });
-                }
-            }).catch(error => {
-                console.error('Error fetching project data:', error);
-                showMessage('Error fetching project data. Please try again.', 'error');
-            });
-        };
-
         async function saveProject() {
             const formData = new FormData(form);
             const projectData = Object.fromEntries(formData);
@@ -383,6 +363,10 @@
                 const database = firebase.database();
                 const newProjectRef = database.ref('projects').push();
                 await newProjectRef.set(projectData);
+
+                // Copy data to Project Info node to be accessed by Project Info.html
+                const projectInfoRef = database.ref('projectInfo').push();
+                await projectInfoRef.set(projectData);
 
                 showMessage('Project saved successfully!', 'success');
                 form.reset();
@@ -433,8 +417,6 @@
                             clientItem.innerHTML = `
                                 <span>${project.projectName}</span>
                                 <div class="client-icons">
-                                    <i class="fas fa-arrow-right" title="Move to Upcoming Project" onclick="moveToUpcomingProjects('${key}')"></i>
-                                    <i class="fas fa-calendar-alt" title="Move to Current Project" onclick="moveToCurrentProjects('${key}')"></i>
                                     <i class="fas fa-trash-alt" title="Delete" onclick="deleteProject('${key}')"></i>
                                 </div>
                             `;
@@ -461,6 +443,10 @@
             document.getElementById('clientName').value = project.clientName || '';
             document.getElementById('clientSurname').value = project.clientSurname || '';
             document.getElementById('clientCell').value = project.clientCell || '';
+            document.getElementById('architectName').value = project.architectName || '';
+            document.getElementById('architectNumber').value = project.architectNumber || '';
+            document.getElementById('engineerName').value = project.engineerName || '';
+            document.getElementById('engineerNumber').value = project.engineerNumber || '';
             document.getElementById('notes').value = project.notes || '';
         }
     });

@@ -131,10 +131,10 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Load upcoming projects from Firebase
-        function loadUpcomingProjects() {
+        // Load projects from Firebase
+        function loadProjects() {
             const projectsDashboard = document.getElementById('projectsDashboard');
-            const projectsRef = database.ref('upcomingProjects'); // Ensure this matches the node where data is stored
+            const projectsRef = database.ref('projects'); // Correct node to fetch data
 
             projectsRef.on('value', (snapshot) => {
                 projectsDashboard.innerHTML = ''; // Clear previous entries
@@ -153,22 +153,24 @@
                                 <strong>ERF No:</strong> ${project.erfNo || 'N/A'}<br>
                                 <strong>Client:</strong> ${project.clientName || 'N/A'} ${project.clientSurname || ''}<br>
                                 <strong>Cell Number:</strong> ${project.clientCell || 'N/A'}<br>
+                                <strong>Architect:</strong> ${project.architectName || 'N/A'}, ${project.architectNumber || 'N/A'}<br>
+                                <strong>Engineer:</strong> ${project.engineerName || 'N/A'}, ${project.engineerNumber || 'N/A'}<br>
                                 <strong>Notes:</strong> ${project.notes || 'No notes provided.'}
                             </div>
                         `;
                         projectsDashboard.appendChild(projectTile);
                     });
                 } else {
-                    projectsDashboard.innerHTML = '<p>No upcoming projects found.</p>';
+                    projectsDashboard.innerHTML = '<p>No projects found.</p>';
                 }
             }, (error) => {
-                console.error('Error fetching upcoming projects:', error);
+                console.error('Error fetching projects:', error);
                 projectsDashboard.innerHTML = '<p>Error loading projects. Please try again later.</p>';
             });
         }
 
-        // Initialize loading of upcoming projects
-        loadUpcomingProjects();
+        // Initialize loading of projects
+        loadProjects();
     </script>
 </body>
 </html>

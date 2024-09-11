@@ -314,11 +314,64 @@
             saveProject();
         });
 
+        // Load clients on page load
+        loadClients();
+
+        // Defining functions in the global scope to ensure accessibility
+        window.deleteProject = function(key) {
+            if (confirm('Are you sure you want to delete this project?')) {
+                firebase.database().ref('projects/' + key).remove()
+                    .then(() => {
+                        showMessage('Project deleted successfully.', 'success');
+                        loadClients(); 
+                    })
+                    .catch((error) => {
+                        console.error('Error deleting project:', error);
+                        showMessage('Error deleting project. Please try again.', 'error');
+                    });
+            }
+        };
+
+        window.moveToUpcomingProjects = function (key) {
+            const projectRef = firebase.database().ref(`projects/${key}`);
+            projectRef.once('value').then(snapshot => {
+                const projectData = snapshot.val();
+                if (projectData) {
+                    firebase.database().ref('upcomingProjects').push(projectData)
+                        .then(() => showMessage('Project moved to Upcoming Projects.', 'success'))
+                        .catch(error => {
+                            console.error('Error moving project:', error);
+                            showMessage('Error moving project. Please try again.', 'error');
+                        });
+                }
+            }).catch(error => {
+                console.error('Error fetching project data:', error);
+                showMessage('Error fetching project data. Please try again.', 'error');
+            });
+        };
+
+        window.moveToCurrentProjects = function (key) {
+            const projectRef = firebase.database().ref(`projects/${key}`);
+            projectRef.once('value').then(snapshot => {
+                const projectData = snapshot.val();
+                if (projectData) {
+                    firebase.database().ref('currentProjects').push(projectData)
+                        .then(() => showMessage('Project moved to Current Projects.', 'success'))
+                        .catch(error => {
+                            console.error('Error moving project:', error);
+                            showMessage('Error moving project. Please try again.', 'error');
+                        });
+                }
+            }).catch(error => {
+                console.error('Error fetching project data:', error);
+                showMessage('Error fetching project data. Please try again.', 'error');
+            });
+        };
+
         async function saveProject() {
             const formData = new FormData(form);
             const projectData = Object.fromEntries(formData);
 
-            // Check if projectName is filled
             if (!projectData.projectName) {
                 showMessage('Please enter a Project Name before saving.', 'error');
                 return;
@@ -332,8 +385,8 @@
                 await newProjectRef.set(projectData);
 
                 showMessage('Project saved successfully!', 'success');
-                form.reset(); 
-                loadClients(); 
+                form.reset();
+                loadClients();
             } catch (error) {
                 console.error('Error saving data:', error);
                 showMessage('Error saving data. Please try again.', 'error');
@@ -357,17 +410,17 @@
 
         function loadClients() {
             const clientsList = document.getElementById('clientsList');
-            clientsList.innerHTML = ''; 
+            clientsList.innerHTML = '';
 
             const clientsRef = firebase.database().ref('projects');
-            
+
             clientsRef.on('value', (snapshot) => {
-                console.log('Fetching data from Firebase...'); 
+                console.log('Fetching data from Firebase...');
                 if (snapshot.exists()) {
                     const data = snapshot.val();
-                    console.log('Data received:', data); 
+                    console.log('Data received:', data);
 
-                    clientsList.innerHTML = ''; 
+                    clientsList.innerHTML = '';
 
                     for (const key in data) {
                         const project = data[key];
@@ -385,7 +438,7 @@
                                     <i class="fas fa-trash-alt" title="Delete" onclick="deleteProject('${key}')"></i>
                                 </div>
                             `;
-                            clientItem.onclick = () => populateFormFields(project, key); 
+                            clientItem.onclick = () => populateFormFields(project, key);
                             clientsList.appendChild(clientItem);
                         } else {
                             console.warn('Project data missing projectName:', project);
@@ -393,7 +446,7 @@
                     }
                 } else {
                     console.log('No data found in the "projects" path.');
-                    clientsList.innerHTML = '<p>No projects found.</p>'; 
+                    clientsList.innerHTML = '<p>No projects found.</p>';
                 }
             }, (error) => {
                 console.error('Error fetching data from Firebase:', error);
@@ -401,45 +454,6 @@
             });
         }
 
-        // Function to move project to Upcoming Projects
-        window.moveToUpcomingProjects = function (key) {
-            const projectRef = firebase.database().ref(`projects/${key}`);
-            projectRef.once('value').then(snapshot => {
-                const projectData = snapshot.val();
-                if (projectData) {
-                    firebase.database().ref('upcomingProjects').push(projectData)
-                        .then(() => showMessage('Project moved to Upcoming Projects.', 'success'))
-                        .catch(error => {
-                            console.error('Error moving project:', error);
-                            showMessage('Error moving project. Please try again.', 'error');
-                        });
-                }
-            }).catch(error => {
-                console.error('Error fetching project data:', error);
-                showMessage('Error fetching project data. Please try again.', 'error');
-            });
-        }
-
-        // Function to move project to Current Projects
-        window.moveToCurrentProjects = function (key) {
-            const projectRef = firebase.database().ref(`projects/${key}`);
-            projectRef.once('value').then(snapshot => {
-                const projectData = snapshot.val();
-                if (projectData) {
-                    firebase.database().ref('currentProjects').push(projectData)
-                        .then(() => showMessage('Project moved to Current Projects.', 'success'))
-                        .catch(error => {
-                            console.error('Error moving project:', error);
-                            showMessage('Error moving project. Please try again.', 'error');
-                        });
-                }
-            }).catch(error => {
-                console.error('Error fetching project data:', error);
-                showMessage('Error fetching project data. Please try again.', 'error');
-            });
-        }
-
-        // Function to populate form fields when a client is clicked
         function populateFormFields(project, key) {
             document.getElementById('projectName').value = project.projectName || '';
             document.getElementById('projectAddress').value = project.projectAddress || '';
@@ -449,24 +463,6 @@
             document.getElementById('clientCell').value = project.clientCell || '';
             document.getElementById('notes').value = project.notes || '';
         }
-
-        // Function to delete a project from Firebase
-        function deleteProject(key) {
-            if (confirm('Are you sure you want to delete this project?')) {
-                firebase.database().ref('projects/' + key).remove()
-                    .then(() => {
-                        showMessage('Project deleted successfully.', 'success');
-                        loadClients(); 
-                    })
-                    .catch((error) => {
-                        console.error('Error deleting project:', error);
-                        showMessage('Error deleting project. Please try again.', 'error');
-                    });
-            }
-        }
-
-        // Initialize loading of clients on page load
-        loadClients();
     });
     </script>
 </body>

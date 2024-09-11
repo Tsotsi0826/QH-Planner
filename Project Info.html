@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Info</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --background-color: #f0f4f8;
+            --text-color: #2c3e50;
+            --tile-background: #ffffff;
+            --border-color: #bdc3c7;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --hover-color: #2980b9;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+        .back-button {
+            display: flex;
+            align-items: center;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 18px;
+            margin-bottom: 20px;
+            transition: color 0.3s ease;
+        }
+        .back-button i {
+            margin-right: 8px;
+            font-size: 24px;
+        }
+        .back-button:hover {
+            color: var(--hover-color);
+        }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+            font-weight: normal;
+        }
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 20px;
+        }
+        .tile {
+            background-color: var(--tile-background);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            width: calc(33.333% - 20px);
+            min-width: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .tile:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+        .tile-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        .tile-content {
+            font-size: 0.9em;
+            color: var(--text-color);
+            padding: 10px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 10px;
+            width: 100%;
+            text-align: left;
+        }
+        /* Responsive Layout */
+        @media (max-width: 768px) {
+            .tile {
+                width: 80%;
+            }
+        }
+    </style>
+    <!-- Adding Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <!-- Back to Dashboard link with Home icon -->
+    <a href="Dashboard.html" class="back-button">
+        <i class="fas fa-home"></i> Back to Dashboard
+    </a>
+
+    <h1>Project Info</h1>
+    <div class="dashboard" id="projectsDashboard">
+        <!-- Tiles will be generated here dynamically -->
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD82WxYqaYASCiTmcBd7nHHZMTsAJSZkIc",
+            authDomain: "qh-planner.firebaseapp.com",
+            databaseURL: "https://qh-planner-default-rtdb.firebaseio.com",
+            projectId: "qh-planner",
+            storageBucket: "qh-planner.appspot.com",
+            messagingSenderId: "847763991357",
+            appId: "1:847763991357:web:9dda19dfee4dac66a5f354"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Load upcoming projects from Firebase
+        function loadUpcomingProjects() {
+            const projectsDashboard = document.getElementById('projectsDashboard');
+            const projectsRef = database.ref('upcomingProjects'); // Ensure this matches the node where data is stored
+
+            projectsRef.on('value', (snapshot) => {
+                projectsDashboard.innerHTML = ''; // Clear previous entries
+                const data = snapshot.val();
+
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        const project = data[key];
+                        // Create tile for each project
+                        const projectTile = document.createElement('div');
+                        projectTile.className = 'tile';
+                        projectTile.innerHTML = `
+                            <div class="tile-title">${project.projectName || 'Unnamed Project'}</div>
+                            <div class="tile-content">
+                                <strong>Address:</strong> ${project.projectAddress || 'N/A'}<br>
+                                <strong>ERF No:</strong> ${project.erfNo || 'N/A'}<br>
+                                <strong>Client:</strong> ${project.clientName || 'N/A'} ${project.clientSurname || ''}<br>
+                                <strong>Cell Number:</strong> ${project.clientCell || 'N/A'}<br>
+                                <strong>Notes:</strong> ${project.notes || 'No notes provided.'}
+                            </div>
+                        `;
+                        projectsDashboard.appendChild(projectTile);
+                    });
+                } else {
+                    projectsDashboard.innerHTML = '<p>No upcoming projects found.</p>';
+                }
+            }, (error) => {
+                console.error('Error fetching upcoming projects:', error);
+                projectsDashboard.innerHTML = '<p>Error loading projects. Please try again later.</p>';
+            });
+        }
+
+        // Initialize loading of upcoming projects
+        loadUpcomingProjects();
+    </script>
+</body>
+</html>

@@ -236,7 +236,7 @@
                         userOption.value = userName;
                         userOption.textContent = userName;
                         userSelect.insertBefore(userOption, userSelect.lastElementChild);
-                        addedUsers.add(userName); // Mark this user as added
+                        addedUsers.add(userName); // Track added usernames
                     }
                 }
             });
@@ -244,10 +244,10 @@
 
         // Add new user and save to Firebase
         function addNewUser() {
-            const newUserName = prompt("Enter new user's name:");
+            const newUserName = prompt("Enter new user's name:").trim(); // Trim whitespace
             if (newUserName) {
                 const userRef = database.ref('users').push();
-                userRef.set({ name: newUserName.trim(), calendarUrl: "" })
+                userRef.set({ name: newUserName, calendarUrl: "" })
                     .then(() => {
                         loadUsers(); // Reload users to update the dropdown immediately
                         console.log('User added successfully');

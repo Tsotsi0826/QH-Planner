@@ -383,7 +383,7 @@
                                 With: ${meeting.userName}<br>
                                 On: ${meeting.date} at ${meeting.time}
                                 <div>
-                                    <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
+                                    <button class="edit-btn" onclick="editMeeting('${id}', '${meeting.customerName}', '${meeting.date}', '${meeting.time}')">Edit</button>
                                     <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
                                 </div>
                             `;
@@ -404,6 +404,95 @@
                 }
             });
         }
+
+        // Delete a meeting from Firebase
+        function deleteMeeting(meetingId) {
+            const meetingRef = database.ref(`Meetings/${meetingId}`);
+            meetingRef.remove()
+                .then(() => {
+                    alert('Meeting deleted successfully');
+                    const selectedUser = document.getElementById('user-name').value;
+                    loadMeetings(selectedUser);
+                    generateCalendar(); // Refresh the calendar after deletion
+                })
+                .catch((error) => {
+                    console.error('Error deleting meeting:', error);
+                    alert('Failed to delete meeting: ' + error.message);
+                });
+        }
+
+        // Edit a meeting from Firebase
+        function editMeeting(meetingId, customerName, date, time) {
+            // Populate form fields with existing data for editing
+            document.getElementById('customer-name').value = customerName;
+            document.getElementById('meeting-date').value = date;
+            document.getElementById('meeting-time').value = time;
+
+            // Update the form submission handler to update the meeting
+            document.getElementById('meeting-form').onsubmit = function (event) {
+                event.preventDefault();
+
+                // Get updated values from the form
+                const updatedCustomerName = document.getElementById('customer-name').value;
+                const updatedDate = document.getElementById('meeting-date').value;
+                const updatedTime = document.getElementById('meeting-time').value;
+
+                // Update the meeting data in Firebase
+                database.ref(`Meetings/${meetingId}`).update({
+                    customerName: updatedCustomerName,
+                    date: updatedDate,
+                    time: updatedTime
+                })
+                .then(() => {
+                    alert('Meeting updated successfully');
+                    document.getElementById('meeting-form').reset(); // Clear form data
+                    loadMeetings(document.getElementById('user-name').value); // Reload meetings
+                    generateCalendar(); // Refresh the calendar
+                    document.getElementById('meeting-form').onsubmit = addMeetingHandler; // Reset the form submission handler
+                })
+                .catch((error) => {
+                    console.error('Error updating meeting:', error);
+                    alert('Failed to update meeting: ' + error.message);
+                });
+            };
+        }
+
+        // Original form submission handler for adding meetings
+        function addMeetingHandler(event) {
+            event.preventDefault();
+            const userName = document.getElementById('user-name').value;
+            const customerName = document.getElementById('customer-name').value;
+            const meetingDate = document.getElementById('meeting-date').value;
+            const meetingTime = document.getElementById('meeting-time').value;
+
+            if (!userName || userName === 'add-user') {
+                alert("Please select a valid user.");
+                return;
+            }
+
+            const newMeeting = {
+                userName: userName,
+                customerName: customerName,
+                date: meetingDate,
+                time: meetingTime
+            };
+
+            // Push the meeting data under the Meetings node and link to the user
+            database.ref('Meetings').push(newMeeting)
+                .then(() => {
+                    alert('Meeting scheduled successfully');
+                    document.getElementById('meeting-form').reset(); // Clear form data
+                    loadMeetings(userName); // Reload meetings
+                    generateCalendar(); // Refresh the calendar
+                })
+                .catch((error) => {
+                    console.error('Error scheduling meeting:', error);
+                    alert('Failed to schedule meeting: ' + error.message);
+                });
+        }
+
+        // Set the form submission handler to the original handler initially
+        document.getElementById('meeting-form').onsubmit = addMeetingHandler;
 
         // Save Google Calendar link for a selected user in MeetingsGoogle
         document.getElementById('add-calendar-btn').addEventListener('click', function() {

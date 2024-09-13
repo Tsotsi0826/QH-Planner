@@ -101,14 +101,14 @@
         </div>
         <div class="tile" onclick="showDetails('running-projects')" aria-label="Running Projects">
             <div class="tile-icon">📆</div>
-            <div class="tile-title">Running Projects</div>
+            <div the="tile-title">Running Projects</div>
         </div>
         <div class="tile" onclick="showDetails('tasks')" aria-label="Tasks">
             <div class="tile-icon">📝</div>
             <div class="tile-title">Tasks</div>
         </div>
-        <!-- Added Sub Contractors tile -->
-        <div class="tile" onclick="showDetails('sub-contractors')" aria-label="Sub Contractors">
+        <!-- Added Sub Contractors tile linked to GitHub -->
+        <div class="tile" onclick="window.location.href='https://github.com/Tsotsi0826/QH-Planner/tree/main/Subcontractors'" aria-label="Sub Contractors">
             <div class="tile-icon">👷</div>
             <div class="tile-title">Sub Contractors</div>
         </div>
@@ -118,21 +118,20 @@
         function showDetails(category) {
             // Map of categories to their corresponding HTML files based on your GitHub file structure
             const categoryFiles = {
-                'projects': 'https://tsotsi0826.github.io/QH-Planner/Create%20New%20Project.html', // Link to your Create New Project page
-                'project-info': 'https://tsotsi0826.github.io/QH-Planner/Project%20Info.html', // Link to your Project Info page
+                'projects': 'https://tsotsi0826.github.io/QH-Planner/Create%20New%20Project.html',
+                'project-info': 'https://tsotsi0826.github.io/QH-Planner/Project%20Info.html',
                 'meetings': 'https://tsotsi0826.github.io/QH-Planner/Meetings.html',
-                'running-projects': 'https://tsotsi0826.github.io/QH-Planner/Running%20Projects.html', // Updated link to Running Projects.html
-                'tasks': 'https://tsotsi0826.github.io/QH-Planner/Tasks.html', // Link to your Tasks page
-                'sub-contractors': 'https://tsotsi0826.github.io/QH-Planner/Subcontractors.html' // Added link to Sub Contractors page
+                'running-projects': 'https://tsotsi0826.github.io/QH-Planner/Running%20Projects.html',
+                'tasks': 'https://tsotsi0826.github.io/QH-Planner/Tasks.html',
+                // Correct URL for Sub Contractors
+                'sub-contractors': 'https://github.com/Tsotsi0826/QH-Planner/tree/main/Subcontractors'
             };
 
             const file = categoryFiles[category];
-
             if (file) {
-                // Navigate to the corresponding HTML file
                 window.location.href = file;
             } else {
-                alert(`Showing details for ${category}. This functionality will be implemented later.`);
+                alert(`No details available for ${category}.`);
             }
         }
     </script>

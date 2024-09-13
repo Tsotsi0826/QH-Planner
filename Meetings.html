@@ -253,6 +253,41 @@
             });
         }
 
+        // Generate calendar
+        function generateCalendar() {
+            const calendar = document.getElementById('calendar');
+            calendar.innerHTML = ''; // Clear the calendar before regenerating
+            const daysInMonth = 31; // Simplified for demonstration
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayElement = document.createElement('div');
+                dayElement.classList.add('calendar-day');
+                dayElement.textContent = i;
+                dayElement.dataset.date = i; // Add data attribute for the date
+                calendar.appendChild(dayElement);
+            }
+        }
+
+        // Show meetings tooltip on calendar hover
+        function showMeetingsTooltip(event) {
+            const dayElement = event.currentTarget;
+            const customerName = dayElement.dataset.customer;
+
+            if (customerName) {
+                let tooltip = document.createElement('div');
+                tooltip.className = 'meeting-tooltip';
+                tooltip.innerHTML = `Customer: ${customerName}`;
+                dayElement.appendChild(tooltip);
+            }
+        }
+
+        // Hide meetings tooltip on mouse leave
+        function hideMeetingsTooltip(event) {
+            const tooltips = event.currentTarget.getElementsByClassName('meeting-tooltip');
+            while (tooltips.length > 0) {
+                tooltips[0].parentNode.removeChild(tooltips[0]);
+            }
+        }
+
         // Event listener to show input box when "Add New User" is selected
         document.getElementById('user-name').addEventListener('change', function() {
             const newUserInput = document.getElementById('new-user-name');
@@ -261,6 +296,7 @@
                 newUserInput.focus();
             } else {
                 newUserInput.style.display = 'none';
+                loadMeetings(this.value); // Load meetings when a user is selected
             }
         });
 
@@ -314,6 +350,8 @@
                 .then(() => {
                     alert('Meeting scheduled successfully');
                     document.getElementById('meeting-form').reset();
+                    loadMeetings(userName);
+                    generateCalendar(); // Refresh the calendar after adding a meeting
                 })
                 .catch((error) => {
                     console.error('Error scheduling meeting:', error);
@@ -321,8 +359,79 @@
                 });
         });
 
-        // Load users when the page loads
+        // Load meetings from Firebase based on selected user
+        function loadMeetings(selectedUser) {
+            const meetingsRef = database.ref('Meetings');
+            meetingsRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                const meetingsList = document.getElementById('meetings-list');
+                meetingsList.innerHTML = '<h2>Upcoming Meetings</h2>';
+                document.querySelectorAll('.calendar-day').forEach(day => {
+                    day.classList.remove('has-meeting');
+                    day.removeEventListener('mouseenter', showMeetingsTooltip);
+                    day.removeEventListener('mouseleave', hideMeetingsTooltip);
+                });
+
+                if (data) {
+                    for (let id in data) {
+                        const meeting = data[id];
+                        if (meeting.userName === selectedUser) {
+                            const meetingItem = document.createElement('div');
+                            meetingItem.className = 'meeting-item';
+                            meetingItem.innerHTML = `
+                                <strong>${meeting.customerName}</strong><br>
+                                With: ${meeting.userName}<br>
+                                On: ${meeting.date} at ${meeting.time}
+                                <div>
+                                    <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
+                                    <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
+                                </div>
+                            `;
+                            meetingsList.appendChild(meetingItem);
+
+                            // Mark the day on the calendar
+                            const meetingDate = new Date(meeting.date);
+                            const day = meetingDate.getDate();
+                            const calendarDay = document.querySelector(`.calendar-day[data-date='${day}']`);
+                            if (calendarDay) {
+                                calendarDay.classList.add('has-meeting');
+                                calendarDay.dataset.customer = meeting.customerName;
+                                calendarDay.addEventListener('mouseenter', showMeetingsTooltip);
+                                calendarDay.addEventListener('mouseleave', hideMeetingsTooltip);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Delete a meeting from Firebase
+        function deleteMeeting(meetingId) {
+            const meetingRef = database.ref(`Meetings/${meetingId}`);
+            meetingRef.remove()
+                .then(() => {
+                    alert('Meeting deleted successfully');
+                    const selectedUser = document.getElementById('user-name').value;
+                    loadMeetings(selectedUser);
+                    generateCalendar(); // Refresh the calendar after deletion
+                })
+                .catch((error) => {
+                    console.error('Error deleting meeting:', error);
+                    alert('Failed to delete meeting: ' + error.message);
+                });
+        }
+
+        // Display the stored Google Calendar link
+        function displayCalendarLink(calendarUrl) {
+            const calendarLinkContainer = document.getElementById('calendar-link-container');
+            calendarLinkContainer.innerHTML = `
+                <a href="${calendarUrl}" target="_blank" class="calendar-link-btn">Open Google Calendar</a>
+            `;
+        }
+
+        // Load users and generate the calendar on page load
         loadUsers();
+        generateCalendar();
     </script>
 </body>
 </html>

@@ -352,18 +352,18 @@
             const card = document.createElement('div');
             card.classList.add('subcontractor-card');
             card.innerHTML = `
-                <div class="category-tag">${subcontractor.category}</div>
-                <h3>${subcontractor.name}</h3>
-                <p>Contact: ${subcontractor.contact}</p>
+                <div class="category-tag">${subcontractor.category || 'N/A'}</div>
+                <h3>${subcontractor.name || 'Unnamed'}</h3>
+                <p>Contact: ${subcontractor.contact || 'N/A'}</p>
                 ${subcontractor.email ? `<p>Email: ${subcontractor.email}</p>` : ''}
                 <div class="card-actions">
                     <button class="edit-btn" onclick="showEditForm('${id}')">Edit</button>
                     <button class="delete-btn" onclick="deleteSubcontractor('${id}')">Delete</button>
                 </div>
                 <div class="edit-form" id="edit-form-${id}">
-                    <input type="text" id="edit-name-${id}" value="${subcontractor.name}" required>
-                    <input type="text" id="edit-category-${id}" value="${subcontractor.category}" required>
-                    <input type="tel" id="edit-contact-${id}" value="${subcontractor.contact}" required>
+                    <input type="text" id="edit-name-${id}" value="${subcontractor.name || ''}" required>
+                    <input type="text" id="edit-category-${id}" value="${subcontractor.category || ''}" required>
+                    <input type="tel" id="edit-contact-${id}" value="${subcontractor.contact || ''}" required>
                     <input type="email" id="edit-email-${id}" value="${subcontractor.email || ''}">
                     <button onclick="updateSubcontractor('${id}')">Update</button>
                 </div>

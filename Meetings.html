@@ -8,23 +8,45 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --background-color: #ecf0f1;
+            --text-color: #34495e;
+            --border-color: #bdc3c7;
+        }
         body {
             font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
             margin: 0;
             padding: 20px;
-            background-color: #ecf0f1;
         }
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
         }
-        h1 {
-            color: #3498db;
-            margin-bottom: 20px;
+        .form-container, .calendar-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .form-container {
+            flex: 1;
+            min-width: 300px;
+        }
+        .calendar-container {
+            flex: 2;
+            min-width: 400px;
+        }
+        h1, h2 {
+            color: var(--primary-color);
+            margin-top: 0;
         }
         .form-group {
             margin-bottom: 15px;
@@ -32,160 +54,275 @@
         label {
             display: block;
             margin-bottom: 5px;
+            font-weight: 500;
         }
-        input, select, button {
+        input, select {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #bdc3c7;
+            padding: 8px;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
+            box-sizing: border-box;
         }
         button {
-            background-color: #2ecc71;
+            background-color: var(--secondary-color);
             color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 16px;
         }
         button:hover {
             background-color: #27ae60;
         }
+        #calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .calendar-day {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+        }
+        .calendar-day.has-meeting {
+            background-color: #d5f5e3;
+        }
+        .calendar-day:hover .meeting-tooltip {
+            display: block;
+        }
+        .meeting-tooltip {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+        #meetings-list {
+            margin-top: 20px;
+        }
+        .meeting-item {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .home-link {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+        .home-link svg {
+            margin-right: 10px;
+        }
+        .edit-btn, .delete-btn {
+            padding: 5px 10px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .edit-btn {
+            background-color: #f39c12;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+        }
+        .calendar-url-container {
+            margin-top: 20px;
+        }
+        .calendar-url-container input {
+            margin-right: 10px;
+            width: calc(100% - 110px);
+        }
+        .calendar-link-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+    <a href="Dashboard.html" class="home-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Back to Dashboard
+    </a>
+    
+    <div class="container">
+        <div class="form-container">
+            <h1>Schedule a Meeting</h1>
+            <form id="meeting-form">
+                <div class="form-group">
+                    <label for="user-name">User Name:</label>
+                    <select id="user-name" required>
+                        <option value="">Select User</option>
+                        <option value="add-user">Add New User</option>
+                    </select>
+                    <input type="text" id="new-user-name" placeholder="Enter new user name" style="display:none; margin-top:10px;">
+                </div>
+                <div class="form-group">
+                    <label for="customer-name">Customer Name:</label>
+                    <input type="text" id="customer-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="meeting-date">Date:</label>
+                    <input type="date" id="meeting-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="meeting-time">Time:</label>
+                    <input type="time" id="meeting-time" required>
+                </div>
+                <button type="submit">Schedule Meeting</button>
+            </form>
 
-<div class="container">
-    <h1>Schedule a Meeting</h1>
-    <form id="meeting-form">
-        <div class="form-group">
-            <label for="user-name">User Name:</label>
-            <select id="user-name" required>
-                <option value="">Select User</option>
-                <option value="add-user">Add New User</option>
-            </select>
-            <input type="text" id="new-user-name" placeholder="Enter new user name" style="display:none;">
+            <!-- Google Calendar URL input and button -->
+            <div class="calendar-url-container">
+                <input type="url" id="calendar-url" placeholder="Paste your Google Calendar URL">
+                <button id="add-calendar-btn">Add Calendar</button>
+            </div>
+            <div id="calendar-link-container"></div>
         </div>
-        <div class="form-group">
-            <label for="customer-name">Customer Name:</label>
-            <input type="text" id="customer-name" required>
+        <div class="calendar-container">
+            <h2>Meeting Calendar</h2>
+            <div id="calendar">
+                <!-- Calendar will be generated by JavaScript -->
+            </div>
+            <div id="meetings-list">
+                <h2>Upcoming Meetings</h2>
+                <!-- Meeting list will be populated by JavaScript -->
+            </div>
         </div>
-        <div class="form-group">
-            <label for="meeting-date">Date:</label>
-            <input type="date" id="meeting-date" required>
-        </div>
-        <div class="form-group">
-            <label for="meeting-time">Time:</label>
-            <input type="time" id="meeting-time" required>
-        </div>
-        <button type="submit">Schedule Meeting</button>
-    </form>
-</div>
+    </div>
 
-<script>
-    // Firebase configuration
-    const firebaseConfig = {
-        databaseURL: "https://qh-planner-default-rtdb.firebaseio.com/",
-    };
-
-    // Initialize Firebase
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-
-    // Get reference to the database
-    const database = firebase.database();
-
-    // Load users from Firebase when the page loads
-    function loadUsers() {
-        const userSelect = document.getElementById('user-name');
-        userSelect.innerHTML = `<option value="">Select User</option><option value="add-user">Add New User</option>`;
-
-        // Reference to Users node under Meetings
-        const usersRef = database.ref('Meetings/Users');
-
-        // Fetch and list users
-        usersRef.once('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                for (let userId in data) {
-                    const option = document.createElement('option');
-                    option.value = userId;
-                    option.textContent = data[userId].name;
-                    userSelect.appendChild(option);
-                }
-            }
-        });
-    }
-
-    // Event listener to show input box when "Add New User" is selected
-    document.getElementById('user-name').addEventListener('change', function() {
-        const newUserInput = document.getElementById('new-user-name');
-        if (this.value === 'add-user') {
-            newUserInput.style.display = 'block';
-            newUserInput.focus();
-        } else {
-            newUserInput.style.display = 'none';
-        }
-    });
-
-    // Add a new user to Meetings/Users
-    function addNewUser(userName) {
-        const usersRef = database.ref('Meetings/Users').push();
-        usersRef.set({ name: userName })
-            .then(() => {
-                alert('User added successfully');
-                loadUsers();
-            })
-            .catch((error) => {
-                console.error('Error adding user:', error);
-                alert('Failed to add user: ' + error.message);
-            });
-    }
-
-    // Event listener for form submission
-    document.getElementById('meeting-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const userName = document.getElementById('user-name').value;
-        const newUserInput = document.getElementById('new-user-name');
-
-        // Handle adding a new user
-        if (userName === 'add-user' && newUserInput.value.trim()) {
-            addNewUser(newUserInput.value.trim());
-            newUserInput.value = '';
-            newUserInput.style.display = 'none';
-            return;
-        }
-
-        // Handle scheduling a meeting
-        const customerName = document.getElementById('customer-name').value;
-        const meetingDate = document.getElementById('meeting-date').value;
-        const meetingTime = document.getElementById('meeting-time').value;
-
-        if (!userName || userName === 'add-user') {
-            alert("Please select a valid user.");
-            return;
-        }
-
-        const newMeeting = {
-            userName: userName,
-            customerName: customerName,
-            date: meetingDate,
-            time: meetingTime
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            databaseURL: "https://qh-planner-default-rtdb.firebaseio.com/",
         };
 
-        // Push the meeting data under the Meetings node
-        database.ref('Meetings').push(newMeeting)
-            .then(() => {
-                alert('Meeting scheduled successfully');
-                document.getElementById('meeting-form').reset();
-            })
-            .catch((error) => {
-                console.error('Error scheduling meeting:', error);
-                alert('Failed to schedule meeting: ' + error.message);
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        // Get reference to the database
+        const database = firebase.database();
+
+        // Load users from Firebase when the page loads
+        function loadUsers() {
+            const userSelect = document.getElementById('user-name');
+            userSelect.innerHTML = `<option value="">Select User</option><option value="add-user">Add New User</option>`;
+
+            // Reference to Users node under Meetings
+            const usersRef = database.ref('Meetings/Users');
+
+            // Fetch and list users
+            usersRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    for (let userId in data) {
+                        const option = document.createElement('option');
+                        option.value = userId;
+                        option.textContent = data[userId].name;
+                        userSelect.appendChild(option);
+                    }
+                }
             });
-    });
+        }
 
-    // Load users when the page loads
-    loadUsers();
-</script>
+        // Event listener to show input box when "Add New User" is selected
+        document.getElementById('user-name').addEventListener('change', function() {
+            const newUserInput = document.getElementById('new-user-name');
+            if (this.value === 'add-user') {
+                newUserInput.style.display = 'block';
+                newUserInput.focus();
+            } else {
+                newUserInput.style.display = 'none';
+            }
+        });
 
+        // Add a new user to Meetings/Users
+        function addNewUser(userName) {
+            const usersRef = database.ref('Meetings/Users').push();
+            usersRef.set({ name: userName })
+                .then(() => {
+                    alert('User added successfully');
+                    loadUsers();
+                })
+                .catch((error) => {
+                    console.error('Error adding user:', error);
+                    alert('Failed to add user: ' + error.message);
+                });
+        }
+
+        // Event listener for form submission
+        document.getElementById('meeting-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const userName = document.getElementById('user-name').value;
+            const newUserInput = document.getElementById('new-user-name');
+
+            // Handle adding a new user
+            if (userName === 'add-user' && newUserInput.value.trim()) {
+                addNewUser(newUserInput.value.trim());
+                newUserInput.value = '';
+                newUserInput.style.display = 'none';
+                return;
+            }
+
+            // Handle scheduling a meeting
+            const customerName = document.getElementById('customer-name').value;
+            const meetingDate = document.getElementById('meeting-date').value;
+            const meetingTime = document.getElementById('meeting-time').value;
+
+            if (!userName || userName === 'add-user') {
+                alert("Please select a valid user.");
+                return;
+            }
+
+            const newMeeting = {
+                userName: userName,
+                customerName: customerName,
+                date: meetingDate,
+                time: meetingTime
+            };
+
+            // Push the meeting data under the Meetings node
+            database.ref('Meetings').push(newMeeting)
+                .then(() => {
+                    alert('Meeting scheduled successfully');
+                    document.getElementById('meeting-form').reset();
+                })
+                .catch((error) => {
+                    console.error('Error scheduling meeting:', error);
+                    alert('Failed to schedule meeting: ' + error.message);
+                });
+        });
+
+        // Load users when the page loads
+        loadUsers();
+    </script>
 </body>
 </html>

@@ -249,30 +249,14 @@
         // Show meetings tooltip on calendar hover
         function showMeetingsTooltip(event) {
             const dayElement = event.currentTarget;
-            const day = dayElement.dataset.date;
-            const userName = document.getElementById('user-name').value;
+            const customerName = dayElement.dataset.customer;
 
-            if (!userName || userName === "add-user") {
-                return; // Do nothing if no user is selected or if the "Add New User" option is selected
+            if (customerName) {
+                let tooltip = document.createElement('div');
+                tooltip.className = 'meeting-tooltip';
+                tooltip.innerHTML = `Customer: ${customerName}`;
+                dayElement.appendChild(tooltip);
             }
-
-            const meetingsRef = database.ref('Meetings').orderByChild('date').equalTo(day);
-            meetingsRef.once('value', (snapshot) => {
-                const data = snapshot.val();
-                let content = '';
-                for (let id in data) {
-                    const meeting = data[id];
-                    if (meeting.userName === userName) {
-                        content += `${meeting.customerName} at ${meeting.time}<br>`;
-                    }
-                }
-                if (content) {
-                    const tooltip = document.createElement('div');
-                    tooltip.className = 'meeting-tooltip';
-                    tooltip.innerHTML = content;
-                    dayElement.appendChild(tooltip);
-                }
-            });
         }
 
         // Hide meetings tooltip on mouse leave
@@ -420,6 +404,22 @@
                     }
                 }
             });
+        }
+
+        // Delete a meeting from Firebase
+        function deleteMeeting(meetingId) {
+            const meetingRef = database.ref(`Meetings/${meetingId}`);
+            meetingRef.remove()
+                .then(() => {
+                    alert('Meeting deleted successfully');
+                    const selectedUser = document.getElementById('user-name').value;
+                    loadMeetings(selectedUser);
+                    generateCalendar(); // Refresh the calendar after deletion
+                })
+                .catch((error) => {
+                    console.error('Error deleting meeting:', error);
+                    alert('Failed to delete meeting: ' + error.message);
+                });
         }
 
         // Display the stored Google Calendar link

@@ -107,6 +107,11 @@
             <div class="tile-icon">📝</div>
             <div class="tile-title">Tasks</div>
         </div>
+        <!-- Added Sub Contractors tile -->
+        <div class="tile" onclick="showDetails('sub-contractors')" aria-label="Sub Contractors">
+            <div class="tile-icon">👷</div>
+            <div class="tile-title">Sub Contractors</div>
+        </div>
     </div>
 
     <script>
@@ -115,9 +120,10 @@
             const categoryFiles = {
                 'projects': 'https://tsotsi0826.github.io/QH-Planner/Create%20New%20Project.html', // Link to your Create New Project page
                 'project-info': 'https://tsotsi0826.github.io/QH-Planner/Project%20Info.html', // Link to your Project Info page
-                'meetings': 'https://tsotsi0826.github.io/QH-Planner/Meetings.html', 
+                'meetings': 'https://tsotsi0826.github.io/QH-Planner/Meetings.html',
                 'running-projects': 'https://tsotsi0826.github.io/QH-Planner/Running%20Projects.html', // Updated link to Running Projects.html
-                'tasks': 'https://tsotsi0826.github.io/QH-Planner/Tasks.html' // Link to your Tasks page
+                'tasks': 'https://tsotsi0826.github.io/QH-Planner/Tasks.html', // Link to your Tasks page
+                'sub-contractors': 'https://tsotsi0826.github.io/QH-Planner/Subcontractors.html' // Added link to Sub Contractors page
             };
 
             const file = categoryFiles[category];

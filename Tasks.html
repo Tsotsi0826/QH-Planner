@@ -30,13 +30,13 @@
             flex-wrap: wrap;
             gap: 20px;
         }
-        .form-container, .calendar-container {
+        .form-container, .calendar-container, .tasks-container {
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 20px;
         }
-        .form-container {
+        .form-container, .tasks-container {
             flex: 1;
             min-width: 300px;
         }
@@ -144,7 +144,7 @@
     
     <div class="container">
         <div class="form-container">
-            <h1>Schedule a Task</h1>
+            <h1>Assign a Task</h1>
             <form id="task-form">
                 <div class="form-group">
                     <label for="user-name">User Name:</label>
@@ -165,7 +165,7 @@
                     <label for="task-time">Time:</label>
                     <input type="time" id="task-time" required>
                 </div>
-                <button type="submit">Schedule Task</button>
+                <button type="submit">Assign Task</button>
             </form>
 
             <!-- Google Calendar URL input and button -->
@@ -271,7 +271,8 @@
                 time: taskTime
             };
 
-            database.ref('tasks').push(newTask)
+            // Reference to the 'Tasks' node in Firebase
+            database.ref('Tasks').push(newTask)
                 .then(() => {
                     console.log('Task added successfully');
                     event.target.reset();
@@ -284,7 +285,7 @@
 
         // Load tasks from Firebase based on selected user
         function loadTasks(selectedUser) {
-            const tasksRef = database.ref('tasks');
+            const tasksRef = database.ref('Tasks');
             tasksRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 const tasksList = document.getElementById('tasks-list');
@@ -321,7 +322,7 @@
 
         // Edit task
         function editTask(id) {
-            const taskRef = database.ref('tasks/' + id);
+            const taskRef = database.ref('Tasks/' + id);
             taskRef.once('value').then((snapshot) => {
                 const task = snapshot.val();
                 document.getElementById('user-name').value = task.userName;
@@ -355,7 +356,7 @@
         // Delete task
         function deleteTask(id) {
             if (confirm('Are you sure you want to delete this task?')) {
-                const taskRef = database.ref('tasks/' + id);
+                const taskRef = database.ref('Tasks/' + id);
                 taskRef.remove()
                     .then(() => {
                         console.log('Task deleted successfully');

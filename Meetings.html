@@ -236,8 +236,8 @@
             const userSelect = document.getElementById('user-name');
             userSelect.innerHTML = `<option value="">Select User</option><option value="add-user">Add New User</option>`;
 
-            // Reference to Users node under Meetings
-            const usersRef = database.ref('Meetings/Users');
+            // Reference to MeetingsUser node
+            const usersRef = database.ref('MeetingsUser');
 
             // Fetch and list users
             usersRef.once('value', (snapshot) => {
@@ -300,9 +300,9 @@
             }
         });
 
-        // Add a new user to Meetings/Users
+        // Add a new user to MeetingsUser
         function addNewUser(userName) {
-            const usersRef = database.ref('Meetings/Users').push();
+            const usersRef = database.ref('MeetingsUser').push();
             usersRef.set({ name: userName })
                 .then(() => {
                     alert('User added successfully');
@@ -405,21 +405,31 @@
             });
         }
 
-        // Delete a meeting from Firebase
-        function deleteMeeting(meetingId) {
-            const meetingRef = database.ref(`Meetings/${meetingId}`);
-            meetingRef.remove()
-                .then(() => {
-                    alert('Meeting deleted successfully');
-                    const selectedUser = document.getElementById('user-name').value;
-                    loadMeetings(selectedUser);
-                    generateCalendar(); // Refresh the calendar after deletion
-                })
-                .catch((error) => {
-                    console.error('Error deleting meeting:', error);
-                    alert('Failed to delete meeting: ' + error.message);
-                });
-        }
+        // Save Google Calendar link for a selected user in MeetingsGoogle
+        document.getElementById('add-calendar-btn').addEventListener('click', function() {
+            const calendarUrl = document.getElementById('calendar-url').value;
+            const selectedUser = document.getElementById('user-name').value;
+
+            if (!selectedUser || selectedUser === 'add-user') {
+                alert('Please select a user from the dropdown before adding your calendar URL.');
+                return;
+            }
+
+            if (calendarUrl) {
+                const calendarRef = database.ref('MeetingsGoogle').push();
+                calendarRef.set({ user: selectedUser, url: calendarUrl })
+                    .then(() => {
+                        alert('Google Calendar link saved successfully');
+                        displayCalendarLink(calendarUrl);
+                    })
+                    .catch((error) => {
+                        console.error('Error saving calendar link:', error);
+                        alert('Failed to save calendar link: ' + error.message);
+                    });
+            } else {
+                alert('Please paste a valid Google Calendar URL.');
+            }
+        });
 
         // Display the stored Google Calendar link
         function displayCalendarLink(calendarUrl) {

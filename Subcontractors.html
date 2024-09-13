@@ -157,27 +157,6 @@
         #add-category-form button {
             width: 100px;
         }
-        #search-suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background-color: white;
-            border: 1px solid var(--border-color);
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-        }
-        .suggestion-item {
-            padding: 10px;
-            cursor: pointer;
-        }
-        .suggestion-item:hover {
-            background-color: var(--background-color);
-        }
     </style>
 </head>
 <body>
@@ -227,7 +206,6 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <div id="search-suggestions"></div>
             </div>
             <div id="subcontractors-grid">
                 <!-- Subcontractor cards will be populated here -->
@@ -327,16 +305,11 @@
             subcontractorsRef.on('value', (snapshot) => {
                 subcontractorsGrid.innerHTML = '';
                 const data = snapshot.val();
-                if (data) {
-                    for (let id in data) {
-                        const subcontractor = data[id];
-                        const card = createSubcontractorCard(subcontractor);
-                        subcontractorsGrid.appendChild(card);
-                    }
-                } else {
-                    subcontractorsGrid.innerHTML = '<p>No subcontractors found.</p>';
+                for (let id in data) {
+                    const subcontractor = data[id];
+                    const card = createSubcontractorCard(subcontractor);
+                    subcontractorsGrid.appendChild(card);
                 }
-                setupSearch(data); // Pass the data to setupSearch
             });
         }
 
@@ -353,27 +326,45 @@
             return card;
         }
 
-        // Updated Search functionality with autocomplete
-        function setupSearch(subcontractorsData) {
+        // Updated Search functionality with partial match
+        function setupSearch() {
             const searchInput = document.getElementById('search-input');
-            const suggestionsContainer = document.getElementById('search-suggestions');
-            const subcontractorsGrid = document.getElementById('subcontractors-grid');
-            let allSubcontractors = Object.values(subcontractorsData || {});
-
             searchInput.addEventListener('input', () => {
                 const searchTerm = searchInput.value.toLowerCase();
-                if (searchTerm.length === 0) {
-                    suggestionsContainer.style.display = 'none';
-                    showAllSubcontractors();
-                    return;
-                }
+                const cards = document.querySelectorAll('.subcontractor-card');
+                cards.forEach(card => {
+                    const name = card.querySelector('h3').textContent.toLowerCase();
+                    const category = card.querySelector('.category-tag').textContent.toLowerCase();
+                    const contact = card.querySelector('p:nth-of-type(1)').textContent.toLowerCase();
+                    const email = card.querySelector('p:nth-of-type(2)') ? card.querySelector('p:nth-of-type(2)').textContent.toLowerCase() : '';
+                    
+                    if (name.includes(searchTerm) || 
+                        category.includes(searchTerm) || 
+                        contact.includes(searchTerm) || 
+                        email.includes(searchTerm)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
 
-                const suggestions = allSubcontractors.filter(subcontractor => 
-                    subcontractor.name.toLowerCase().includes(searchTerm) ||
-                    subcontractor.category.toLowerCase().includes(searchTerm) ||
-                    subcontractor.contact.toLowerCase().includes(searchTerm) ||
-                    (subcontractor.email && subcontractor.email.toLowerCase().includes(searchTerm))
-                );
+        // Event listeners
+        document.getElementById('subcontractor-form').addEventListener('submit', addSubcontractor);
+        document.getElementById('sub-category').addEventListener('change', function() {
+            if (this.value === 'add-category') {
+                document.getElementById('add-category-form').classList.add('show');
+            } else {
+                document.getElementById('add-category-form').classList.remove('show');
+            }
+        });
+        document.getElementById('add-category-btn').addEventListener('click', addCategory);
 
-                displaySuggestions(suggestions);
-                filterSubcontractors
+        // Initialize the page
+        loadCategories();
+        loadSubcontractors();
+        setupSearch();
+    </script>
+</body>
+</html>

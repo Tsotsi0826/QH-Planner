@@ -336,7 +336,7 @@
                 } else {
                     subcontractorsGrid.innerHTML = '<p>No subcontractors found.</p>';
                 }
-                setupSearch(); // Reinitialize search after loading data
+                setupSearch(data); // Pass the data to setupSearch
             });
         }
 
@@ -354,19 +354,11 @@
         }
 
         // Updated Search functionality with autocomplete
-        function setupSearch() {
+        function setupSearch(subcontractorsData) {
             const searchInput = document.getElementById('search-input');
             const suggestionsContainer = document.getElementById('search-suggestions');
             const subcontractorsGrid = document.getElementById('subcontractors-grid');
-            let allSubcontractors = [];
-
-            // Load all subcontractors for search
-            database.ref('subcontractors').once('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    allSubcontractors = Object.values(data);
-                }
-            });
+            let allSubcontractors = Object.values(subcontractorsData || {});
 
             searchInput.addEventListener('input', () => {
                 const searchTerm = searchInput.value.toLowerCase();
@@ -384,7 +376,4 @@
                 );
 
                 displaySuggestions(suggestions);
-                filterSubcontractors(searchTerm);
-            });
-
-            function displaySuggestions(suggestions) {
+                filterSubcontractors

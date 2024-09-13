@@ -345,13 +345,13 @@
                 time: meetingTime
             };
 
-            // Push the meeting data under the Meetings node
+            // Push the meeting data under the Meetings node and link to the user
             database.ref('Meetings').push(newMeeting)
                 .then(() => {
                     alert('Meeting scheduled successfully');
-                    document.getElementById('meeting-form').reset();
-                    loadMeetings(userName);
-                    generateCalendar(); // Refresh the calendar after adding a meeting
+                    document.getElementById('meeting-form').reset(); // Clear form data
+                    loadMeetings(userName); // Reload meetings
+                    generateCalendar(); // Refresh the calendar
                 })
                 .catch((error) => {
                     console.error('Error scheduling meeting:', error);

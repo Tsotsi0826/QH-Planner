@@ -327,11 +327,16 @@
             subcontractorsRef.on('value', (snapshot) => {
                 subcontractorsGrid.innerHTML = '';
                 const data = snapshot.val();
-                for (let id in data) {
-                    const subcontractor = data[id];
-                    const card = createSubcontractorCard(subcontractor);
-                    subcontractorsGrid.appendChild(card);
+                if (data) {
+                    for (let id in data) {
+                        const subcontractor = data[id];
+                        const card = createSubcontractorCard(subcontractor);
+                        subcontractorsGrid.appendChild(card);
+                    }
+                } else {
+                    subcontractorsGrid.innerHTML = '<p>No subcontractors found.</p>';
                 }
+                setupSearch(); // Reinitialize search after loading data
             });
         }
 
@@ -357,7 +362,10 @@
 
             // Load all subcontractors for search
             database.ref('subcontractors').once('value', (snapshot) => {
-                allSubcontractors = Object.values(snapshot.val() || {});
+                const data = snapshot.val();
+                if (data) {
+                    allSubcontractors = Object.values(data);
+                }
             });
 
             searchInput.addEventListener('input', () => {
@@ -380,10 +388,3 @@
             });
 
             function displaySuggestions(suggestions) {
-                suggestionsContainer.innerHTML = '';
-                if (suggestions.length > 0) {
-                    suggestions.forEach(subcontractor => {
-                        const div = document.createElement('div');
-                        div.classList.add('suggestion-item');
-                        div.textContent = `${subcontractor.name} (${subcontractor.category})`;
-                        div.addEventListener('click', () =>

@@ -109,6 +109,7 @@
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
         }
         .subcontractor-card:hover {
             transform: translateY(-5px);
@@ -156,6 +157,32 @@
         }
         #add-category-form button {
             width: 100px;
+        }
+        .card-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        .edit-btn, .delete-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+        }
+        .edit-form {
+            display: none;
+            margin-top: 10px;
+        }
+        .edit-form.show {
+            display: block;
         }
     </style>
 </head>
@@ -307,14 +334,14 @@
                 const data = snapshot.val();
                 for (let id in data) {
                     const subcontractor = data[id];
-                    const card = createSubcontractorCard(subcontractor);
+                    const card = createSubcontractorCard(id, subcontractor);
                     subcontractorsGrid.appendChild(card);
                 }
             });
         }
 
         // Create a subcontractor card
-        function createSubcontractorCard(subcontractor) {
+        function createSubcontractorCard(id, subcontractor) {
             const card = document.createElement('div');
             card.classList.add('subcontractor-card');
             card.innerHTML = `
@@ -322,49 +349,30 @@
                 <h3>${subcontractor.name}</h3>
                 <p>Contact: ${subcontractor.contact}</p>
                 ${subcontractor.email ? `<p>Email: ${subcontractor.email}</p>` : ''}
+                <div class="card-actions">
+                    <button class="edit-btn" onclick="showEditForm('${id}')">Edit</button>
+                    <button class="delete-btn" onclick="deleteSubcontractor('${id}')">Delete</button>
+                </div>
+                <div class="edit-form" id="edit-form-${id}">
+                    <input type="text" id="edit-name-${id}" value="${subcontractor.name}" required>
+                    <input type="text" id="edit-category-${id}" value="${subcontractor.category}" required>
+                    <input type="tel" id="edit-contact-${id}" value="${subcontractor.contact}" required>
+                    <input type="email" id="edit-email-${id}" value="${subcontractor.email || ''}">
+                    <button onclick="updateSubcontractor('${id}')">Update</button>
+                </div>
             `;
             return card;
         }
 
-        // Updated Search functionality with partial match
-        function setupSearch() {
-            const searchInput = document.getElementById('search-input');
-            searchInput.addEventListener('input', () => {
-                const searchTerm = searchInput.value.toLowerCase();
-                const cards = document.querySelectorAll('.subcontractor-card');
-                cards.forEach(card => {
-                    const name = card.querySelector('h3').textContent.toLowerCase();
-                    const category = card.querySelector('.category-tag').textContent.toLowerCase();
-                    const contact = card.querySelector('p:nth-of-type(1)').textContent.toLowerCase();
-                    const email = card.querySelector('p:nth-of-type(2)') ? card.querySelector('p:nth-of-type(2)').textContent.toLowerCase() : '';
-                    
-                    if (name.includes(searchTerm) || 
-                        category.includes(searchTerm) || 
-                        contact.includes(searchTerm) || 
-                        email.includes(searchTerm)) {
-                        card.style.display = 'block';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            });
+        // Show edit form
+        function showEditForm(id) {
+            const editForm = document.getElementById(`edit-form-${id}`);
+            editForm.classList.toggle('show');
         }
 
-        // Event listeners
-        document.getElementById('subcontractor-form').addEventListener('submit', addSubcontractor);
-        document.getElementById('sub-category').addEventListener('change', function() {
-            if (this.value === 'add-category') {
-                document.getElementById('add-category-form').classList.add('show');
-            } else {
-                document.getElementById('add-category-form').classList.remove('show');
-            }
-        });
-        document.getElementById('add-category-btn').addEventListener('click', addCategory);
-
-        // Initialize the page
-        loadCategories();
-        loadSubcontractors();
-        setupSearch();
-    </script>
-</body>
-</html>
+        // Update subcontractor
+        function updateSubcontractor(id) {
+            const name = document.getElementById(`edit-name-${id}`).value;
+            const category = document.getElementById(`edit-category-${id}`).value;
+            const contact = document.getElementById(`edit-contact-${id}`).value;
+            const email =

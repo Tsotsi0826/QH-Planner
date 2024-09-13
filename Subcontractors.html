@@ -264,15 +264,17 @@
 
             categoriesRef.on('value', (snapshot) => {
                 const data = snapshot.val();
-                const currentOptions = Array.from(categorySelect.options).map(option => option.value);
+                // Clear existing options except the default and "Add New Category"
+                categorySelect.innerHTML = `
+                    <option value="">Select a category</option>
+                    <option value="add-category">+ Add New Category</option>
+                `;
                 
                 for (let id in data) {
-                    if (!currentOptions.includes(data[id])) {
-                        const option = document.createElement('option');
-                        option.value = data[id];
-                        option.textContent = data[id];
-                        categorySelect.insertBefore(option, categorySelect.lastElementChild);
-                    }
+                    const option = document.createElement('option');
+                    option.value = data[id];
+                    option.textContent = data[id];
+                    categorySelect.insertBefore(option, categorySelect.lastElementChild);
                 }
             });
         }
@@ -287,7 +289,7 @@
                         console.log('Category added successfully');
                         document.getElementById('new-category-name').value = '';
                         document.getElementById('add-category-form').classList.remove('show');
-                        document.getElementById('sub-category').value = newCategoryName;
+                        loadCategories(); // Reload categories to include the new one
                     })
                     .catch((error) => {
                         console.error('Error adding category:', error.message);
@@ -379,4 +381,4 @@
 
         // Update subcontractor
         function updateSubcontractor(id) {
-            const name = document.getElementById(`edit-name-${id}`).value
+            const name = document.

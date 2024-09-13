@@ -216,7 +216,7 @@
             const userSelect = document.getElementById('user-name');
             const usersRef = database.ref('users');
 
-            // Clear existing options except the default ones
+            // Clear existing options and add the default options
             userSelect.innerHTML = `
                 <option value="">Select User</option>
                 <option value="add-user">Add New User</option>
@@ -225,11 +225,24 @@
             // Load users from Firebase and add them to the dropdown
             usersRef.on('value', (snapshot) => {
                 const data = snapshot.val();
+                userSelect.innerHTML = `
+                    <option value="">Select User</option>
+                    <option value="add-user">Add New User</option>
+                `;
+
+                const addedUsers = new Set(); // Set to track unique users
+
                 for (let id in data) {
-                    const userOption = document.createElement('option');
-                    userOption.value = data[id].name;
-                    userOption.textContent = data[id].name;
-                    userSelect.insertBefore(userOption, userSelect.lastElementChild);
+                    const userName = data[id].name.trim(); // Trim whitespace
+
+                    // Check for empty or duplicate usernames
+                    if (userName && !addedUsers.has(userName)) {
+                        const userOption = document.createElement('option');
+                        userOption.value = userName;
+                        userOption.textContent = userName;
+                        userSelect.insertBefore(userOption, userSelect.lastElementChild);
+                        addedUsers.add(userName); // Mark this user as added
+                    }
                 }
             });
         }
@@ -238,9 +251,8 @@
         function addNewUser() {
             const newUserName = prompt("Enter new user's name:");
             if (newUserName) {
-                const newCalendarUrl = prompt("Enter your Google Calendar URL:");
                 const userRef = database.ref('users').push();
-                userRef.set({ name: newUserName, calendarUrl: newCalendarUrl })
+                userRef.set({ name: newUserName, calendarUrl: "" })
                     .then(() => {
                         const userSelect = document.getElementById('user-name');
                         const newOption = document.createElement('option');
@@ -249,7 +261,6 @@
                         userSelect.insertBefore(newOption, userSelect.lastElementChild);
                         userSelect.value = newUserName;
                         console.log('User added successfully');
-                        displayCalendarLink(newCalendarUrl);
                         loadTasks(newUserName);
                     })
                     .catch((error) => {
@@ -430,8 +441,6 @@
                         }
                     }
                 });
-            } else {
-                document.getElementById('calendar-link-container').innerHTML = '';
             }
         });
 

@@ -184,9 +184,6 @@
         .edit-form.show {
             display: block;
         }
-        .edit-form input {
-            margin-bottom: 5px;
-        }
     </style>
 </head>
 <body>
@@ -264,17 +261,15 @@
 
             categoriesRef.on('value', (snapshot) => {
                 const data = snapshot.val();
-                // Clear existing options except the default and "Add New Category"
-                categorySelect.innerHTML = `
-                    <option value="">Select a category</option>
-                    <option value="add-category">+ Add New Category</option>
-                `;
+                const currentOptions = Array.from(categorySelect.options).map(option => option.value);
                 
                 for (let id in data) {
-                    const option = document.createElement('option');
-                    option.value = data[id];
-                    option.textContent = data[id];
-                    categorySelect.insertBefore(option, categorySelect.lastElementChild);
+                    if (!currentOptions.includes(data[id])) {
+                        const option = document.createElement('option');
+                        option.value = data[id];
+                        option.textContent = data[id];
+                        categorySelect.insertBefore(option, categorySelect.lastElementChild);
+                    }
                 }
             });
         }
@@ -289,7 +284,7 @@
                         console.log('Category added successfully');
                         document.getElementById('new-category-name').value = '';
                         document.getElementById('add-category-form').classList.remove('show');
-                        loadCategories(); // Reload categories to include the new one
+                        document.getElementById('sub-category').value = newCategoryName;
                     })
                     .catch((error) => {
                         console.error('Error adding category:', error.message);
@@ -337,14 +332,10 @@
             subcontractorsRef.on('value', (snapshot) => {
                 subcontractorsGrid.innerHTML = '';
                 const data = snapshot.val();
-                if (data) {
-                    for (let id in data) {
-                        const subcontractor = data[id];
-                        const card = createSubcontractorCard(id, subcontractor);
-                        subcontractorsGrid.appendChild(card);
-                    }
-                } else {
-                    subcontractorsGrid.innerHTML = '<p>No subcontractors found.</p>';
+                for (let id in data) {
+                    const subcontractor = data[id];
+                    const card = createSubcontractorCard(id, subcontractor);
+                    subcontractorsGrid.appendChild(card);
                 }
             });
         }
@@ -354,18 +345,18 @@
             const card = document.createElement('div');
             card.classList.add('subcontractor-card');
             card.innerHTML = `
-                <div class="category-tag">${subcontractor.category || 'N/A'}</div>
-                <h3>${subcontractor.name || 'Unnamed'}</h3>
-                <p>Contact: ${subcontractor.contact || 'N/A'}</p>
+                <div class="category-tag">${subcontractor.category}</div>
+                <h3>${subcontractor.name}</h3>
+                <p>Contact: ${subcontractor.contact}</p>
                 ${subcontractor.email ? `<p>Email: ${subcontractor.email}</p>` : ''}
                 <div class="card-actions">
                     <button class="edit-btn" onclick="showEditForm('${id}')">Edit</button>
                     <button class="delete-btn" onclick="deleteSubcontractor('${id}')">Delete</button>
                 </div>
                 <div class="edit-form" id="edit-form-${id}">
-                    <input type="text" id="edit-name-${id}" value="${subcontractor.name || ''}" required>
-                    <input type="text" id="edit-category-${id}" value="${subcontractor.category || ''}" required>
-                    <input type="tel" id="edit-contact-${id}" value="${subcontractor.contact || ''}" required>
+                    <input type="text" id="edit-name-${id}" value="${subcontractor.name}" required>
+                    <input type="text" id="edit-category-${id}" value="${subcontractor.category}" required>
+                    <input type="tel" id="edit-contact-${id}" value="${subcontractor.contact}" required>
                     <input type="email" id="edit-email-${id}" value="${subcontractor.email || ''}">
                     <button onclick="updateSubcontractor('${id}')">Update</button>
                 </div>
@@ -381,4 +372,16 @@
 
         // Update subcontractor
         function updateSubcontractor(id) {
-            const name = document.
+            const name = document.getElementById(`edit-name-${id}`).value;
+            const category = document.getElementById(`edit-category-${id}`).value;
+            const contact = document.getElementById(`edit-contact-${id}`).value;
+            const email = document.getElementById(`edit-email-${id}`).value;
+
+            const updatedSubcontractor = {
+                category: category,
+                name: name,
+                contact: contact,
+            };
+
+            if (email.trim() !== '') {
+                updatedSub

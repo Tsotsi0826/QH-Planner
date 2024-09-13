@@ -1,1 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subcontractor Management - Construction Project</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #50c878;
+            --background-color: #f4f7f9;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --card-background: #ffffff;
+            --input-background: #f9fafb;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        .form-container, .subcontractors-container {
+            background-color: var(--card-background);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            flex: 1;
+            min-width: 300px;
+        }
+        h1, h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            font-weight: 600;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: var(--input-background);
+            transition: border-color 0.3s ease;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #45b069;
+        }
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: color 0.3s ease;
+        }
+        .home-link:hover {
+            color: #3a7bbf;
+        }
+        .home-link svg {
+            margin-right: 10px;
+        }
+        #subcontractors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .subcontractor-card {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .subcontractor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 12px 40px 12px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: var(--input-background);
+        }
+        .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-color);
+        }
+        .category-tag {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        #add-category-form {
+            display: none;
+            margin-top: 10px;
+        }
+        #add-category-form.show {
+            display: block;
+        }
+        #add-category-form input {
+            width: calc(100% - 110px);
+            margin-right: 10px;
+        }
+        #add-category-form button {
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <a href="Dashboard.html" class="home-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Back to Dashboard
+    </a>
+    
+    <div class="container">
+        <div class="form-container">
+            <h1>Add Subcontractor</h1>
+            <form id="subcontractor-form">
+                <div class="form-group">
+                    <label for="sub-category">Category:</label>
+                    <select id="sub-category" required>
+                        <option value="">Select a category</option>
+                        <option value="add-category">+ Add New Category</option>
+                    </select>
+                    <div id="add-category-form">
+                        <input type="text" id="new-category-name" placeholder="Enter new category name">
+                        <button type="button" id="add-category-btn">Add</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="sub-name">Subcontractor Name:</label>
+                    <input type="text" id="sub-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="sub-contact">Contact Number:</label>
+                    <input type="tel" id="sub-contact" required>
+                </div>
+                <div class="form-group">
+                    <label for="sub-email">Email Address (optional):</label>
+                    <input type="email" id="sub-email">
+                </div>
+                <button type="submit">Add Subcontractor</button>
+            </form>
+        </div>
+        <div class="subcontractors-container">
+            <h2>Subcontractors</h2>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search subcontractors...">
+                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </div>
+            <div id="subcontractors-grid">
+                <!-- Subcontractor cards will be populated here -->
+            </div>
+        </div>
+    </div>
 
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            databaseURL: "https://qh-planner-default-rtdb.firebaseio.com/",
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        // Get a reference to the database service
+        const database = firebase.database();
+
+        // Load categories from Firebase
+        function loadCategories() {
+            const categorySelect = document.getElementById('sub-category');
+            const categoriesRef = database.ref('Categories');
+
+            categoriesRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                const currentOptions = Array.from(categorySelect.options).map(option => option.value);
+                
+                for (let id in data) {
+                    if (!currentOptions.includes(data[id])) {
+                        const option = document.createElement('option');
+                        option.value = data[id];
+                        option.textContent = data[id];
+                        categorySelect.insertBefore(option, categorySelect.lastElementChild);
+                    }
+                }
+            });
+        }
+
+        // Add a new category
+        function addCategory() {
+            const newCategoryName = document.getElementById('new-category-name').value.trim();
+            if (newCategoryName) {
+                const categoriesRef = database.ref('Categories');
+                categoriesRef.push(newCategoryName)
+                    .then(() => {
+                        console.log('Category added successfully');
+                        document.getElementById('new-category-name').value = '';
+                        document.getElementById('add-category-form').classList.remove('show');
+                        document.getElementById('sub-category').value = newCategoryName;
+                    })
+                    .catch((error) => {
+                        console.error('Error adding category:', error.message);
+                        alert(`Failed to add category: ${error.message}`);
+                    });
+            }
+        }
+
+        // Add a new subcontractor
+        function addSubcontractor(event) {
+            event.preventDefault();
+            const category = document.getElementById('sub-category').value;
+            const name = document.getElementById('sub-name').value;
+            const contact = document.getElementById('sub-contact').value;
+            const email = document.getElementById('sub-email').value;
+
+            const newSubcontractor = {
+                category: category,
+                name: name,
+                contact: contact,
+            };
+
+            // Only add email if it's not empty
+            if (email.trim() !== '') {
+                newSubcontractor.email = email;
+            }
+
+            database.ref('subcontractors').push(newSubcontractor)
+                .then(() => {
+                    console.log('Subcontractor added successfully');
+                    event.target.reset();
+                    loadSubcontractors();
+                })
+                .catch((error) => {
+                    console.error('Error adding subcontractor:', error.message);
+                    alert(`Failed to add subcontractor: ${error.message}`);
+                });
+        }
+
+        // Load subcontractors from Firebase
+        function loadSubcontractors() {
+            const subcontractorsGrid = document.getElementById('subcontractors-grid');
+            const subcontractorsRef = database.ref('subcontractors');
+
+            subcontractorsRef.on('value', (snapshot) => {
+                subcontractorsGrid.innerHTML = '';
+                const data = snapshot.val();
+                for (let id in data) {
+                    const subcontractor = data[id];
+                    const card = createSubcontractorCard(subcontractor);
+                    subcontractorsGrid.appendChild(card);
+                }
+            });
+        }
+
+        // Create a subcontractor card
+        function createSubcontractorCard(subcontractor) {
+            const card = document.createElement('div');
+            card.classList.add('subcontractor-card');
+            card.innerHTML = `
+                <div class="category-tag">${subcontractor.category}</div>
+                <h3>${subcontractor.name}</h3>
+                <p>Contact: ${subcontractor.contact}</p>
+                ${subcontractor.email ? `<p>Email: ${subcontractor.email}</p>` : ''}
+            `;
+            return card;
+        }
+
+        // Updated Search functionality with partial match
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                const cards = document.querySelectorAll('.subcontractor-card');
+                cards.forEach(card => {
+                    const name = card.querySelector('h3').textContent.toLowerCase();
+                    const category = card.querySelector('.category-tag').textContent.toLowerCase();
+                    const contact = card.querySelector('p:nth-of-type(1)').textContent.toLowerCase();
+                    const email = card.querySelector('p:nth-of-type(2)') ? card.querySelector('p:nth-of-type(2)').textContent.toLowerCase() : '';
+                    
+                    if (name.includes(searchTerm) || 
+                        category.includes(searchTerm) || 
+                        contact.includes(searchTerm) || 
+                        email.includes(searchTerm)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Event listeners
+        document.getElementById('subcontractor-form').addEventListener('submit', addSubcontractor);
+        document.getElementById('sub-category').addEventListener('change', function() {
+            if (this.value === 'add-category') {
+                document.getElementById('add-category-form').classList.add('show');
+            } else {
+                document.getElementById('add-category-form').classList.remove('show');
+            }
+        });
+        document.getElementById('add-category-btn').addEventListener('click', addCategory);
+
+        // Initialize the page
+        loadCategories();
+        loadSubcontractors();
+        setupSearch();
+    </script>
+</body>
+</html>

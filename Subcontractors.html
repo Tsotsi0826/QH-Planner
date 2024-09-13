@@ -157,6 +157,27 @@
         #add-category-form button {
             width: 100px;
         }
+        #search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .suggestion-item:hover {
+            background-color: var(--background-color);
+        }
     </style>
 </head>
 <body>
@@ -206,6 +227,7 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
+                <div id="search-suggestions"></div>
             </div>
             <div id="subcontractors-grid">
                 <!-- Subcontractor cards will be populated here -->
@@ -326,39 +348,42 @@
             return card;
         }
 
-        // Search functionality
+        // Updated Search functionality with autocomplete
         function setupSearch() {
             const searchInput = document.getElementById('search-input');
+            const suggestionsContainer = document.getElementById('search-suggestions');
+            const subcontractorsGrid = document.getElementById('subcontractors-grid');
+            let allSubcontractors = [];
+
+            // Load all subcontractors for search
+            database.ref('subcontractors').once('value', (snapshot) => {
+                allSubcontractors = Object.values(snapshot.val() || {});
+            });
+
             searchInput.addEventListener('input', () => {
                 const searchTerm = searchInput.value.toLowerCase();
-                const cards = document.querySelectorAll('.subcontractor-card');
-                cards.forEach(card => {
-                    const name = card.querySelector('h3').textContent.toLowerCase();
-                    const category = card.querySelector('.category-tag').textContent.toLowerCase();
-                    if (name.includes(searchTerm) || category.includes(searchTerm)) {
-                        card.style.display = 'block';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
+                if (searchTerm.length === 0) {
+                    suggestionsContainer.style.display = 'none';
+                    showAllSubcontractors();
+                    return;
+                }
+
+                const suggestions = allSubcontractors.filter(subcontractor => 
+                    subcontractor.name.toLowerCase().includes(searchTerm) ||
+                    subcontractor.category.toLowerCase().includes(searchTerm) ||
+                    subcontractor.contact.toLowerCase().includes(searchTerm) ||
+                    (subcontractor.email && subcontractor.email.toLowerCase().includes(searchTerm))
+                );
+
+                displaySuggestions(suggestions);
+                filterSubcontractors(searchTerm);
             });
-        }
 
-        // Event listeners
-        document.getElementById('subcontractor-form').addEventListener('submit', addSubcontractor);
-        document.getElementById('sub-category').addEventListener('change', function() {
-            if (this.value === 'add-category') {
-                document.getElementById('add-category-form').classList.add('show');
-            } else {
-                document.getElementById('add-category-form').classList.remove('show');
-            }
-        });
-        document.getElementById('add-category-btn').addEventListener('click', addCategory);
-
-        // Initialize the page
-        loadCategories();
-        loadSubcontractors();
-        setupSearch();
-    </script>
-</body>
-</html>
+            function displaySuggestions(suggestions) {
+                suggestionsContainer.innerHTML = '';
+                if (suggestions.length > 0) {
+                    suggestions.forEach(subcontractor => {
+                        const div = document.createElement('div');
+                        div.classList.add('suggestion-item');
+                        div.textContent = `${subcontractor.name} (${subcontractor.category})`;
+                        div.addEventListener('click', () =>

@@ -304,7 +304,7 @@
 
         // Function to add or update user in the Meetings/Users node
         function addNewUser(userName) {
-            const usersRef = database.ref('Meetings/Users').push();
+            const usersRef = database.ref('Meetings/Users').push(); // Correct reference to Meetings/Users
             usersRef.set({ name: userName })
                 .then(() => {
                     alert('User added successfully');

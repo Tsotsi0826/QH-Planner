@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
+        /* CSS styles remain unchanged */
         :root {
             --primary-color: #3498db;
             --secondary-color: #2ecc71;
@@ -194,7 +195,9 @@
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
 
         // Get a reference to the database service
         const database = firebase.database();
@@ -264,6 +267,11 @@
             const taskDate = document.getElementById('task-date').value;
             const taskTime = document.getElementById('task-time').value;
 
+            if (!userName || userName === "add-user") {
+                alert("Please select a valid user.");
+                return;
+            }
+
             const newTask = {
                 userName: userName,
                 taskName: taskName,
@@ -279,7 +287,8 @@
                     loadTasks(userName);
                 })
                 .catch((error) => {
-                    console.error('Error adding task: ', error);
+                    console.error('Error adding task: ', error.message);
+                    alert(`Failed to add task: ${error.message}`);
                 });
         }
 
@@ -434,6 +443,7 @@
         // Initialize
         generateCalendar();
         loadUsers(); // Load users when the page loads
+        document.getElementById('task-form').addEventListener('submit', addTask); // Ensure the addTask function is properly attached
     </script>
 </body>
 </html>

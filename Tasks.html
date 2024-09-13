@@ -249,6 +249,7 @@
                         userSelect.value = newUserName;
                         console.log('User added successfully');
                         loadTasks(newUserName);
+                        loadCalendarLink(newUserName); // Load calendar link after adding new user
                     })
                     .catch((error) => {
                         console.error('Error adding user: ', error);
@@ -275,7 +276,7 @@
             database.ref('Tasks').push(newTask)
                 .then(() => {
                     console.log('Task added successfully');
-                    document.getElementById('task-form').reset();
+                    event.target.reset();
                     loadTasks(userName);
                 })
                 .catch((error) => {
@@ -408,6 +409,23 @@
             `;
         }
 
+        // Load the saved calendar link for the selected user
+        function loadCalendarLink(selectedUser) {
+            const userRef = database.ref('users').orderByChild('name').equalTo(selectedUser);
+            userRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const userKey = Object.keys(data)[0];
+                    const calendarUrl = data[userKey].calendarUrl;
+                    if (calendarUrl) {
+                        displayCalendarLink(calendarUrl);
+                    } else {
+                        document.getElementById('calendar-link-container').innerHTML = '';
+                    }
+                }
+            });
+        }
+
         // Load Google Calendar link when a user is selected
         document.getElementById('user-name').addEventListener('change', function() {
             const selectedUser = this.value;
@@ -415,26 +433,13 @@
                 addNewUser();
             } else if (selectedUser) {
                 loadTasks(selectedUser);
-                const userRef = database.ref('users').orderByChild('name').equalTo(selectedUser);
-                userRef.once('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        const userKey = Object.keys(data)[0];
-                        const calendarUrl = data[userKey].calendarUrl;
-                        if (calendarUrl) {
-                            displayCalendarLink(calendarUrl);
-                        } else {
-                            document.getElementById('calendar-link-container').innerHTML = '';
-                        }
-                    }
-                });
+                loadCalendarLink(selectedUser); // Load the user's calendar link when selected
             }
         });
 
         // Initialize
         generateCalendar();
         loadUsers(); // Load users when the page loads
-        document.getElementById('task-form').addEventListener('submit', addTask);
     </script>
 </body>
 </html>

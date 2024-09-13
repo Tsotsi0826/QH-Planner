@@ -181,6 +181,8 @@
                         <option value="">Select User</option>
                         <option value="add-user">Add New User</option>
                     </select>
+                    <!-- New user input, hidden by default -->
+                    <input type="text" id="new-user-name" placeholder="Enter new user name" style="display:none; margin-top:10px;">
                 </div>
                 <div class="form-group">
                     <label for="customer-name">Customer Name:</label>
@@ -282,31 +284,74 @@
             }
         }
 
-        // Add or update user in Meetings node
-        function addOrUpdateUser(userName, calendarUrl = "") {
-            const userRef = database.ref('Meetings').push();
-            userRef.set({
-                name: userName,
-                calendarUrl: calendarUrl
-            }).then(() => {
-                console.log('User added/updated successfully');
-            }).catch((error) => {
-                console.error('Error adding/updating user:', error);
+        // Load users from Firebase when the page loads
+        function loadUsers() {
+            const userSelect = document.getElementById('user-name');
+            userSelect.innerHTML = `<option value="">Select User</option><option value="add-user">Add New User</option>`;
+
+            // Reference to MeetingUsers node in Firebase
+            const usersRef = database.ref('Meetings/MeetingUsers');
+
+            // Fetch and list users
+            usersRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    for (let userId in data) {
+                        const option = document.createElement('option');
+                        option.value = userId;
+                        option.textContent = data[userId].name;
+                        userSelect.appendChild(option);
+                    }
+                }
             });
         }
 
-        // Add a new meeting
-        document.getElementById('meeting-form').addEventListener('submit', addMeeting);
+        // Event listener to show the input box when "Add New User" is selected
+        document.getElementById('user-name').addEventListener('change', function() {
+            const newUserInput = document.getElementById('new-user-name');
+            if (this.value === 'add-user') {
+                newUserInput.style.display = 'block';
+                newUserInput.focus();
+            } else {
+                newUserInput.style.display = 'none';
+            }
+        });
 
-        function addMeeting(event) {
+        // Function to add or update user in the MeetingUsers node
+        function addNewUser(userName) {
+            const usersRef = database.ref('Meetings/MeetingUsers').push();
+            usersRef.set({ name: userName })
+                .then(() => {
+                    alert('User added successfully');
+                    loadUsers(); // Reload the user list after adding
+                })
+                .catch((error) => {
+                    console.error('Error adding new user:', error);
+                    alert('Failed to add user: ' + error.message);
+                });
+        }
+
+        // Update the form submission to handle adding new users
+        document.getElementById('meeting-form').addEventListener('submit', function(event) {
             event.preventDefault();
             const userName = document.getElementById('user-name').value;
+            const newUserInput = document.getElementById('new-user-name');
+
+            // If adding a new user, handle the input and reset the form
+            if (userName === 'add-user' && newUserInput.value.trim()) {
+                addNewUser(newUserInput.value.trim());
+                newUserInput.value = '';
+                newUserInput.style.display = 'none';
+                return;
+            }
+
+            // Handle scheduling meeting as usual
             const customerName = document.getElementById('customer-name').value;
             const meetingDate = document.getElementById('meeting-date').value;
             const meetingTime = document.getElementById('meeting-time').value;
 
-            if (!userName) {
-                alert("Please select a valid user.");
+            if (!userName || userName === 'add-user') {
+                alert("Please select or add a valid user.");
                 return;
             }
 
@@ -321,14 +366,13 @@
             database.ref('Meetings').push(newMeeting)
                 .then(() => {
                     console.log('Meeting added successfully');
-                    event.target.reset();
                     loadMeetings(userName);
                 })
                 .catch((error) => {
                     console.error('Error adding meeting:', error.message);
                     alert(`Failed to add meeting: ${error.message}`);
                 });
-        }
+        });
 
         // Load meetings from Firebase based on selected user
         function loadMeetings(selectedUser) {
@@ -394,9 +438,9 @@
             `;
         }
 
-        // Load users when the page loads
+        // Call the function to load users when the page loads
+        loadUsers();
         generateCalendar();
-        loadMeetings();
     </script>
 </body>
 </html>

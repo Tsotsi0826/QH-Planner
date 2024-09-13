@@ -86,9 +86,28 @@
             border-radius: 4px;
             padding: 10px;
             text-align: center;
+            position: relative;
+            cursor: pointer;
         }
         .calendar-day.has-meeting {
             background-color: #d5f5e3;
+        }
+        .calendar-day:hover .meeting-tooltip {
+            display: block;
+        }
+        .meeting-tooltip {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 10;
         }
         #meetings-list {
             margin-top: 20px;
@@ -131,13 +150,23 @@
             margin-right: 10px;
             width: calc(100% - 110px);
         }
+        .calendar-link-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <a href="Dashboard.html" class="home-link">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline
         </svg>
         Back to Dashboard
     </a>
@@ -162,7 +191,7 @@
                     <input type="date" id="meeting-date" required>
                 </div>
                 <div class="form-group">
-                    <label for="meeting-time">Time:</label>
+                    <label for="meeting-time">Time:</label
                     <input type="time" id="meeting-time" required>
                 </div>
                 <button type="submit">Schedule Meeting</button>
@@ -209,136 +238,113 @@
                 const dayElement = document.createElement('div');
                 dayElement.classList.add('calendar-day');
                 dayElement.textContent = i;
+                dayElement.dataset.date = i; // Add data attribute for the date
+                dayElement.addEventListener('mouseenter', showMeetingsTooltip);
+                dayElement.addEventListener('mouseleave', hideMeetingsTooltip);
                 calendar.appendChild(dayElement);
             }
         }
 
-        // Load users from 'MeetingUsers' node and populate the dropdown
-        function loadUsers() {
-            const userSelect = document.getElementById('user-name');
-            const usersRef = database.ref('MeetingUsers');
+        // Show meetings tooltip on calendar hover
+        function showMeetingsTooltip(event) {
+            const dayElement = event.currentTarget;
+            const day = dayElement.dataset.date;
+            const userName = document.getElementById('user-name').value;
 
-            // Clear existing options except the default ones
-            userSelect.innerHTML = `
-                <option value="">Select User</option>
-                <option value="add-user">Add New User</option>
-            `;
+            if (!userName || userName === "add-user") {
+                return; // Do nothing if no user is selected or if the "Add New User" option is selected
+            }
 
-            // Load users from Firebase and add them to the dropdown
-            usersRef.on('value', (snapshot) => {
+            const meetingsRef = database.ref('meetings').orderByChild('date').equalTo(day);
+            meetingsRef.once('value', (snapshot) => {
                 const data = snapshot.val();
+                let content = '';
                 for (let id in data) {
-                    const userOption = document.createElement('option');
-                    userOption.value = data[id].name;
-                    userOption.textContent = data[id].name;
-                    userSelect.insertBefore(userOption, userSelect.lastElementChild);
+                    const meeting = data[id];
+                    if (meeting.userName === userName) {
+                        content += `${meeting.customerName} at ${meeting.time}<br>`;
+                    }
+                }
+                if (content) {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'meeting-tooltip';
+                    tooltip.innerHTML = content;
+                    dayElement.appendChild(tooltip);
                 }
             });
         }
 
-        // Add new user and save to 'MeetingUsers' node in Firebase
-        function addNewUser() {
-            const newUserName = prompt("Enter new user's name:");
-            if (newUserName) {
-                const userRef = database.ref('MeetingUsers').push();
-                userRef.set({ name: newUserName, calendarUrl: "" })
-                    .then(() => {
-                        const userSelect = document.getElementById('user-name');
-                        const newOption = document.createElement('option');
-                        newOption.value = newUserName;
-                        newOption.textContent = newUserName;
-                        userSelect.insertBefore(newOption, userSelect.lastElementChild);
-                        userSelect.value = newUserName;
-                        console.log('User added successfully');
-                        loadMeetings(newUserName);
-                    })
-                    .catch((error) => {
-                        console.error('Error adding user:', error);
-                    });
+        // Hide meetings tooltip on mouse leave
+        function hideMeetingsTooltip(event) {
+            const tooltips = event.currentTarget.getElementsByClassName('meeting-tooltip');
+            while (tooltips.length > 0) {
+                tooltips[0].parentNode.removeChild(tooltips[0]);
             }
         }
 
-        // Add a new meeting
-        function addMeeting(event) {
-            event.preventDefault();
-            const userName = document.getElementById('user-name').value;
-            const customerName = document.getElementById('customer-name').value;
-            const meetingDate = document.getElementById('meeting-date').value;
-            const meetingTime = document.getElementById('meeting-time').value;
+        // Handle adding and saving Google Calendar link for the selected user
+        document.getElementById('add-calendar-btn').addEventListener('click', function() {
+            const calendarUrl = document.getElementById('calendar-url').value;
+            const selectedUser = document.getElementById('user-name').value;
 
-            if (!userName || userName === "add-user") {
-                alert("Please select a valid user.");
+            if (!selectedUser || selectedUser === 'add-user') {
+                alert('Please select a user from the dropdown before adding your calendar URL.');
                 return;
             }
 
-            const newMeeting = {
-                userName: userName,
-                customerName: customerName,
-                date: meetingDate,
-                time: meetingTime
-            };
-
-            // Reference to the 'meetings' node in Firebase
-            database.ref('meetings').push(newMeeting)
-                .then(() => {
-                    console.log('Meeting added successfully');
-                    event.target.reset();
-                    loadMeetings(userName);
-                })
-                .catch((error) => {
-                    console.error('Error adding meeting:', error.message);
-                    alert(`Failed to add meeting: ${error.message}`);
-                });
-        }
-
-        // Load meetings from Firebase based on selected user
-        function loadMeetings(selectedUser) {
-            const meetingsRef = database.ref('meetings');
-            meetingsRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                const meetingsList = document.getElementById('meetings-list');
-                meetingsList.innerHTML = '<h2>Upcoming Meetings</h2>';
-                document.querySelectorAll('.calendar-day').forEach(day => {
-                    day.classList.remove('has-meeting');
-                });
-                for (let id in data) {
-                    const meeting = data[id];
-                    if (meeting.userName === selectedUser) {
-                        const meetingItem = document.createElement('div');
-                        meetingItem.className = 'meeting-item';
-                        meetingItem.innerHTML = `
-                            <strong>${meeting.customerName}</strong><br>
-                            With: ${meeting.userName}<br>
-                            On: ${meeting.date} at ${meeting.time}
-                            <div>
-                                <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
-                                <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
-                            </div>
-                        `;
-                        meetingsList.appendChild(meetingItem);
-
-                        // Mark the day on the calendar
-                        const day = new Date(meeting.date).getDate();
-                        const calendarDays = document.querySelectorAll('.calendar-day');
-                        if (calendarDays[day - 1]) {
-                            calendarDays[day - 1].classList.add('has-meeting');
-                        }
+            if (calendarUrl) {
+                const userRef = database.ref('MeetingUsers').orderByChild('name').equalTo(selectedUser);
+                userRef.once('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const userKey = Object.keys(data)[0];
+                        database.ref('MeetingUsers/' + userKey).update({ calendarUrl: calendarUrl })
+                            .then(() => {
+                                displayCalendarLink(calendarUrl);
+                                console.log('Google Calendar link saved for user:', selectedUser);
+                            })
+                            .catch((error) => {
+                                console.error('Error saving calendar link: ', error);
+                            });
                     }
-                }
-            });
-        }
-
-        // Event listeners for form submissions
-        document.getElementById('meeting-form').addEventListener('submit', addMeeting);
-
-        // Handle "Add New User" selection from dropdown
-        document.getElementById('user-name').addEventListener('change', function() {
-            if (this.value === 'add-user') {
-                addNewUser();
-            } else if (this.value) {
-                loadMeetings(this.value);
+                });
+            } else {
+                alert('Please paste a valid Google Calendar URL.');
             }
         });
+
+        // Load Google Calendar link when a user is selected
+        document.getElementById('user-name').addEventListener('change', function() {
+            const selectedUser = this.value;
+            if (selectedUser === 'add-user') {
+                addNewUser();
+            } else if (selectedUser) {
+                loadMeetings(selectedUser);
+                const userRef = database.ref('MeetingUsers').orderByChild('name').equalTo(selectedUser);
+                userRef.once('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const userKey = Object.keys(data)[0];
+                        const calendarUrl = data[userKey].calendarUrl;
+                        if (calendarUrl) {
+                            displayCalendarLink(calendarUrl);
+                        } else {
+                            document.getElementById('calendar-link-container').innerHTML = '';
+                        }
+                    }
+                });
+            } else {
+                document.getElementById('calendar-link-container').innerHTML = ''; // Clear the calendar link if no user is selected
+            }
+        });
+
+        // Display the stored Google Calendar link
+        function displayCalendarLink(calendarUrl) {
+            const calendarLinkContainer = document.getElementById('calendar-link-container');
+            calendarLinkContainer.innerHTML = `
+                <a href="${calendarUrl}" target="_blank" class="calendar-link-btn">Open Google Calendar</a>
+            `;
+        }
 
         // Initialize and load users when the page loads
         generateCalendar();

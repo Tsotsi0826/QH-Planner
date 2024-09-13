@@ -235,14 +235,13 @@
         // Generate calendar
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
+            calendar.innerHTML = ''; // Clear the calendar before regenerating
             const daysInMonth = 31; // Simplified for demonstration
             for (let i = 1; i <= daysInMonth; i++) {
                 const dayElement = document.createElement('div');
                 dayElement.classList.add('calendar-day');
                 dayElement.textContent = i;
                 dayElement.dataset.date = i; // Add data attribute for the date
-                dayElement.addEventListener('mouseenter', showMeetingsTooltip);
-                dayElement.addEventListener('mouseleave', hideMeetingsTooltip);
                 calendar.appendChild(dayElement);
             }
         }
@@ -309,11 +308,13 @@
         // Event listener to show the input box when "Add New User" is selected
         document.getElementById('user-name').addEventListener('change', function() {
             const newUserInput = document.getElementById('new-user-name');
-            if (this.value === 'add-user') {
+            const selectedUser = this.value;
+            if (selectedUser === 'add-user') {
                 newUserInput.style.display = 'block';
                 newUserInput.focus();
             } else {
                 newUserInput.style.display = 'none';
+                loadMeetings(selectedUser); // Load meetings when a user is selected
             }
         });
 
@@ -367,6 +368,7 @@
                 .then(() => {
                     console.log('Meeting added successfully');
                     loadMeetings(userName);
+                    generateCalendar(); // Regenerate calendar to update marked days
                 })
                 .catch((error) => {
                     console.error('Error adding meeting:', error.message);
@@ -377,58 +379,48 @@
         // Load meetings from Firebase based on selected user
         function loadMeetings(selectedUser) {
             const meetingsRef = database.ref('Meetings');
-            meetingsRef.on('value', (snapshot) => {
+            meetingsRef.once('value', (snapshot) => {
                 const data = snapshot.val();
                 const meetingsList = document.getElementById('meetings-list');
                 meetingsList.innerHTML = '<h2>Upcoming Meetings</h2>';
                 document.querySelectorAll('.calendar-day').forEach(day => {
                     day.classList.remove('has-meeting');
+                    day.removeEventListener('mouseenter', showMeetingsTooltip);
+                    day.removeEventListener('mouseleave', hideMeetingsTooltip);
                 });
-                for (let id in data) {
-                    const meeting = data[id];
-                    if (meeting.userName === selectedUser) {
-                        const meetingItem = document.createElement('div');
-                        meetingItem.className = 'meeting-item';
-                        meetingItem.innerHTML = `
-                            <strong>${meeting.customerName}</strong><br>
-                            With: ${meeting.userName}<br>
-                            On: ${meeting.date} at ${meeting.time}
-                            <div>
-                                <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
-                                <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
-                            </div>
-                        `;
-                        meetingsList.appendChild(meetingItem);
 
-                        // Mark the day on the calendar
-                        const day = new Date(meeting.date).getDate();
-                        const calendarDays = document.querySelectorAll('.calendar-day');
-                        if (calendarDays[day - 1]) {
-                            calendarDays[day - 1].classList.add('has-meeting');
+                if (data) {
+                    for (let id in data) {
+                        const meeting = data[id];
+                        if (meeting.userName === selectedUser) {
+                            const meetingItem = document.createElement('div');
+                            meetingItem.className = 'meeting-item';
+                            meetingItem.innerHTML = `
+                                <strong>${meeting.customerName}</strong><br>
+                                With: ${meeting.userName}<br>
+                                On: ${meeting.date} at ${meeting.time}
+                                <div>
+                                    <button class="edit-btn" onclick="editMeeting('${id}')">Edit</button>
+                                    <button class="delete-btn" onclick="deleteMeeting('${id}')">Delete</button>
+                                </div>
+                            `;
+                            meetingsList.appendChild(meetingItem);
+
+                            // Mark the day on the calendar
+                            const meetingDate = new Date(meeting.date);
+                            const day = meetingDate.getDate();
+                            const calendarDay = document.querySelector(`.calendar-day[data-date='${day}']`);
+                            if (calendarDay) {
+                                calendarDay.classList.add('has-meeting');
+                                calendarDay.dataset.customer = meeting.customerName;
+                                calendarDay.addEventListener('mouseenter', showMeetingsTooltip);
+                                calendarDay.addEventListener('mouseleave', hideMeetingsTooltip);
+                            }
                         }
                     }
                 }
             });
         }
-
-        // Handle adding and saving Google Calendar link for the selected user
-        document.getElementById('add-calendar-btn').addEventListener('click', function() {
-            const calendarUrl = document.getElementById('calendar-url').value;
-            const selectedUser = document.getElementById('user-name').value;
-
-            if (!selectedUser || selectedUser === 'add-user') {
-                alert('Please select a user from the dropdown before adding your calendar URL.');
-                return;
-            }
-
-            if (calendarUrl) {
-                addOrUpdateUser(selectedUser, calendarUrl);
-                displayCalendarLink(calendarUrl);
-                console.log('Google Calendar link saved for user:', selectedUser);
-            } else {
-                alert('Please paste a valid Google Calendar URL.');
-            }
-        });
 
         // Display the stored Google Calendar link
         function displayCalendarLink(calendarUrl) {

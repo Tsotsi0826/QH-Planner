@@ -3,22 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subcontractor Management - Construction Project</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>Tasks - Construction Project</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
+        /* CSS styles remain unchanged */
         :root {
-            --primary-color: #4a90e2;
-            --secondary-color: #50c878;
-            --background-color: #f4f7f9;
-            --text-color: #333;
-            --border-color: #e0e0e0;
-            --card-background: #ffffff;
-            --input-background: #f9fafb;
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --background-color: #ecf0f1;
+            --text-color: #34495e;
+            --border-color: #bdc3c7;
         }
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Roboto', sans-serif;
             line-height: 1.6;
             color: var(--text-color);
             background-color: var(--background-color);
@@ -30,132 +29,108 @@
             margin: 0 auto;
             display: flex;
             flex-wrap: wrap;
-            gap: 30px;
+            gap: 20px;
         }
-        .form-container, .subcontractors-container {
-            background-color: var(--card-background);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            padding: 30px;
+        .form-container, .calendar-container, .tasks-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .form-container, .tasks-container {
             flex: 1;
             min-width: 300px;
+        }
+        .calendar-container {
+            flex: 2;
+            min-width: 400px;
         }
         h1, h2 {
             color: var(--primary-color);
             margin-top: 0;
-            font-weight: 600;
         }
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             font-weight: 500;
-            color: var(--text-color);
         }
         input, select {
             width: 100%;
-            padding: 12px;
+            padding: 8px;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 4px;
             box-sizing: border-box;
-            font-size: 16px;
-            background-color: var(--input-background);
-            transition: border-color 0.3s ease;
-        }
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary-color);
         }
         button {
             background-color: var(--secondary-color);
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
+            padding: 10px 15px;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            font-weight: 500;
-            transition: background-color 0.3s ease;
         }
         button:hover {
-            background-color: #45b069;
+            background-color: #27ae60;
+        }
+        #calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .calendar-day {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+        .calendar-day.has-task {
+            background-color: #d5f5e3;
+        }
+        #tasks-list {
+            margin-top: 20px;
+        }
+        .task-item {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
         }
         .home-link {
-            display: inline-flex;
+            display: flex;
             align-items: center;
             text-decoration: none;
             color: var(--primary-color);
             font-weight: 500;
             margin-bottom: 20px;
-            transition: color 0.3s ease;
-        }
-        .home-link:hover {
-            color: #3a7bbf;
         }
         .home-link svg {
             margin-right: 10px;
         }
-        #subcontractors-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
+        .edit-btn, .delete-btn {
+            padding: 5px 10px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .edit-btn {
+            background-color: #f39c12;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+        }
+        .calendar-url-container {
             margin-top: 20px;
         }
-        .subcontractor-card {
-            background-color: var(--card-background);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .subcontractor-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .search-container {
-            position: relative;
-            margin-bottom: 20px;
-        }
-        #search-input {
-            width: 100%;
-            padding: 12px 40px 12px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-            background-color: var(--input-background);
-        }
-        .search-icon {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-color);
-        }
-        .category-tag {
-            display: inline-block;
-            background-color: var(--primary-color);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-        #add-category-form {
-            display: none;
-            margin-top: 10px;
-        }
-        #add-category-form.show {
-            display: block;
-        }
-        #add-category-form input {
-            width: calc(100% - 110px);
+        .calendar-url-container input {
             margin-right: 10px;
-        }
-        #add-category-form button {
-            width: 100px;
+            width: calc(100% - 110px);
         }
     </style>
 </head>
@@ -170,45 +145,45 @@
     
     <div class="container">
         <div class="form-container">
-            <h1>Add Subcontractor</h1>
-            <form id="subcontractor-form">
+            <h1>Assign a Task</h1>
+            <form id="task-form">
                 <div class="form-group">
-                    <label for="sub-category">Category:</label>
-                    <select id="sub-category" required>
-                        <option value="">Select a category</option>
-                        <option value="add-category">+ Add New Category</option>
+                    <label for="user-name">User Name:</label>
+                    <select id="user-name" required>
+                        <option value="">Select User</option>
+                        <option value="add-user">Add New User</option>
                     </select>
-                    <div id="add-category-form">
-                        <input type="text" id="new-category-name" placeholder="Enter new category name">
-                        <button type="button" id="add-category-btn">Add</button>
-                    </div>
                 </div>
                 <div class="form-group">
-                    <label for="sub-name">Subcontractor Name:</label>
-                    <input type="text" id="sub-name" required>
+                    <label for="task-name">Task Name:</label>
+                    <input type="text" id="task-name" required>
                 </div>
                 <div class="form-group">
-                    <label for="sub-contact">Contact Number:</label>
-                    <input type="tel" id="sub-contact" required>
+                    <label for="task-date">Date:</label>
+                    <input type="date" id="task-date" required>
                 </div>
                 <div class="form-group">
-                    <label for="sub-email">Email Address (optional):</label>
-                    <input type="email" id="sub-email">
+                    <label for="task-time">Time:</label>
+                    <input type="time" id="task-time" required>
                 </div>
-                <button type="submit">Add Subcontractor</button>
+                <button type="submit">Assign Task</button>
             </form>
-        </div>
-        <div class="subcontractors-container">
-            <h2>Subcontractors</h2>
-            <div class="search-container">
-                <input type="text" id="search-input" placeholder="Search subcontractors...">
-                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
+
+            <!-- Google Calendar URL input and button -->
+            <div class="calendar-url-container">
+                <input type="url" id="calendar-url" placeholder="Paste your Google Calendar URL">
+                <button id="add-calendar-btn">Add Calendar</button>
             </div>
-            <div id="subcontractors-grid">
-                <!-- Subcontractor cards will be populated here -->
+            <div id="calendar-link-container"></div>
+        </div>
+        <div class="calendar-container">
+            <h2>Task Calendar</h2>
+            <div id="calendar">
+                <!-- Calendar will be generated by JavaScript -->
+            </div>
+            <div id="tasks-list">
+                <h2>Upcoming Tasks</h2>
+                <!-- Task list will be populated by JavaScript -->
             </div>
         </div>
     </div>
@@ -227,144 +202,248 @@
         // Get a reference to the database service
         const database = firebase.database();
 
-        // Load categories from Firebase
-        function loadCategories() {
-            const categorySelect = document.getElementById('sub-category');
-            const categoriesRef = database.ref('Categories');
+        // Generate calendar
+        function generateCalendar() {
+            const calendar = document.getElementById('calendar');
+            const daysInMonth = 31; // Simplified for demonstration
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayElement = document.createElement('div');
+                dayElement.classList.add('calendar-day');
+                dayElement.textContent = i;
+                calendar.appendChild(dayElement);
+            }
+        }
 
-            categoriesRef.on('value', (snapshot) => {
+        // Load users from Firebase and populate the dropdown
+        function loadUsers() {
+            const userSelect = document.getElementById('user-name');
+            const usersRef = database.ref('users');
+
+            // Clear existing options except the default ones
+            userSelect.innerHTML = `
+                <option value="">Select User</option>
+                <option value="add-user">Add New User</option>
+            `;
+
+            // Load users from Firebase and add them to the dropdown
+            usersRef.on('value', (snapshot) => {
                 const data = snapshot.val();
-                const currentOptions = Array.from(categorySelect.options).map(option => option.value);
-                
                 for (let id in data) {
-                    if (!currentOptions.includes(data[id])) {
-                        const option = document.createElement('option');
-                        option.value = data[id];
-                        option.textContent = data[id];
-                        categorySelect.insertBefore(option, categorySelect.lastElementChild);
-                    }
+                    const userOption = document.createElement('option');
+                    userOption.value = data[id].name;
+                    userOption.textContent = data[id].name;
+                    userSelect.insertBefore(userOption, userSelect.lastElementChild);
                 }
             });
         }
 
-        // Add a new category
-        function addCategory() {
-            const newCategoryName = document.getElementById('new-category-name').value.trim();
-            if (newCategoryName) {
-                const categoriesRef = database.ref('Categories');
-                categoriesRef.push(newCategoryName)
+        // Add new user and save to Firebase
+        function addNewUser() {
+            const newUserName = prompt("Enter new user's name:");
+            if (newUserName) {
+                const userRef = database.ref('users').push();
+                userRef.set({ name: newUserName, calendarUrl: "" })
                     .then(() => {
-                        console.log('Category added successfully');
-                        document.getElementById('new-category-name').value = '';
-                        document.getElementById('add-category-form').classList.remove('show');
-                        document.getElementById('sub-category').value = newCategoryName;
+                        const userSelect = document.getElementById('user-name');
+                        const newOption = document.createElement('option');
+                        newOption.value = newUserName;
+                        newOption.textContent = newUserName;
+                        userSelect.insertBefore(newOption, userSelect.lastElementChild);
+                        userSelect.value = newUserName;
+                        console.log('User added successfully');
+                        loadTasks(newUserName);
                     })
                     .catch((error) => {
-                        console.error('Error adding category:', error.message);
-                        alert(`Failed to add category: ${error.message}`);
+                        console.error('Error adding user: ', error);
                     });
             }
         }
 
-        // Add a new subcontractor
-        function addSubcontractor(event) {
+        // Add a new task
+        function addTask(event) {
             event.preventDefault();
-            const category = document.getElementById('sub-category').value;
-            const name = document.getElementById('sub-name').value;
-            const contact = document.getElementById('sub-contact').value;
-            const email = document.getElementById('sub-email').value;
+            const userName = document.getElementById('user-name').value;
+            const taskName = document.getElementById('task-name').value;
+            const taskDate = document.getElementById('task-date').value;
+            const taskTime = document.getElementById('task-time').value;
 
-            const newSubcontractor = {
-                category: category,
-                name: name,
-                contact: contact,
-            };
-
-            // Only add email if it's not empty
-            if (email.trim() !== '') {
-                newSubcontractor.email = email;
+            if (!userName || userName === "add-user") {
+                alert("Please select a valid user.");
+                return;
             }
 
-            database.ref('subcontractors').push(newSubcontractor)
+            const newTask = {
+                userName: userName,
+                taskName: taskName,
+                date: taskDate,
+                time: taskTime
+            };
+
+            // Reference to the 'Tasks' node in Firebase
+            database.ref('Tasks').push(newTask)
                 .then(() => {
-                    console.log('Subcontractor added successfully');
+                    console.log('Task added successfully');
                     event.target.reset();
-                    loadSubcontractors();
+                    loadTasks(userName);
                 })
                 .catch((error) => {
-                    console.error('Error adding subcontractor:', error.message);
-                    alert(`Failed to add subcontractor: ${error.message}`);
+                    console.error('Error adding task: ', error.message);
+                    alert(`Failed to add task: ${error.message}`);
                 });
         }
 
-        // Load subcontractors from Firebase
-        function loadSubcontractors() {
-            const subcontractorsGrid = document.getElementById('subcontractors-grid');
-            const subcontractorsRef = database.ref('subcontractors');
-
-            subcontractorsRef.on('value', (snapshot) => {
-                subcontractorsGrid.innerHTML = '';
+        // Load tasks from Firebase based on selected user
+        function loadTasks(selectedUser) {
+            const tasksRef = database.ref('Tasks');
+            tasksRef.on('value', (snapshot) => {
                 const data = snapshot.val();
+                const tasksList = document.getElementById('tasks-list');
+                tasksList.innerHTML = '<h2>Upcoming Tasks</h2>';
+                document.querySelectorAll('.calendar-day').forEach(day => {
+                    day.classList.remove('has-task');
+                });
                 for (let id in data) {
-                    const subcontractor = data[id];
-                    const card = createSubcontractorCard(subcontractor);
-                    subcontractorsGrid.appendChild(card);
+                    const task = data[id];
+                    if (task.userName === selectedUser) {
+                        const taskItem = document.createElement('div');
+                        taskItem.className = 'task-item';
+                        taskItem.innerHTML = `
+                            <strong>${task.taskName}</strong><br>
+                            Assigned to: ${task.userName}<br>
+                            On: ${task.date} at ${task.time}
+                            <div>
+                                <button class="edit-btn" onclick="editTask('${id}')">Edit</button>
+                                <button class="delete-btn" onclick="deleteTask('${id}')">Delete</button>
+                            </div>
+                        `;
+                        tasksList.appendChild(taskItem);
+
+                        // Mark the day on the calendar
+                        const day = new Date(task.date).getDate();
+                        const calendarDays = document.querySelectorAll('.calendar-day');
+                        if (calendarDays[day - 1]) {
+                            calendarDays[day - 1].classList.add('has-task');
+                        }
+                    }
                 }
             });
         }
 
-        // Create a subcontractor card
-        function createSubcontractorCard(subcontractor) {
-            const card = document.createElement('div');
-            card.classList.add('subcontractor-card');
-            card.innerHTML = `
-                <div class="category-tag">${subcontractor.category}</div>
-                <h3>${subcontractor.name}</h3>
-                <p>Contact: ${subcontractor.contact}</p>
-                ${subcontractor.email ? `<p>Email: ${subcontractor.email}</p>` : ''}
-            `;
-            return card;
-        }
+        // Edit task
+        function editTask(id) {
+            const taskRef = database.ref('Tasks/' + id);
+            taskRef.once('value').then((snapshot) => {
+                const task = snapshot.val();
+                document.getElementById('user-name').value = task.userName;
+                document.getElementById('task-name').value = task.taskName;
+                document.getElementById('task-date').value = task.date;
+                document.getElementById('task-time').value = task.time;
 
-        // Updated Search functionality with partial match
-        function setupSearch() {
-            const searchInput = document.getElementById('search-input');
-            searchInput.addEventListener('input', () => {
-                const searchTerm = searchInput.value.toLowerCase();
-                const cards = document.querySelectorAll('.subcontractor-card');
-                cards.forEach(card => {
-                    const name = card.querySelector('h3').textContent.toLowerCase();
-                    const category = card.querySelector('.category-tag').textContent.toLowerCase();
-                    const contact = card.querySelector('p:nth-of-type(1)').textContent.toLowerCase();
-                    const email = card.querySelector('p:nth-of-type(2)') ? card.querySelector('p:nth-of-type(2)').textContent.toLowerCase() : '';
-                    
-                    if (name.includes(searchTerm) || 
-                        category.includes(searchTerm) || 
-                        contact.includes(searchTerm) || 
-                        email.includes(searchTerm)) {
-                        card.style.display = 'block';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
+                const form = document.getElementById('task-form');
+                form.onsubmit = function(e) {
+                    e.preventDefault();
+                    const updatedTask = {
+                        userName: document.getElementById('user-name').value,
+                        taskName: document.getElementById('task-name').value,
+                        date: document.getElementById('task-date').value,
+                        time: document.getElementById('task-time').value
+                    };
+                    taskRef.update(updatedTask)
+                        .then(() => {
+                            console.log('Task updated successfully');
+                            form.reset();
+                            form.onsubmit = addTask;
+                            loadTasks(updatedTask.userName);
+                        })
+                        .catch((error) => {
+                            console.error('Error updating task: ', error);
+                        });
+                };
             });
         }
 
-        // Event listeners
-        document.getElementById('subcontractor-form').addEventListener('submit', addSubcontractor);
-        document.getElementById('sub-category').addEventListener('change', function() {
-            if (this.value === 'add-category') {
-                document.getElementById('add-category-form').classList.add('show');
+        // Delete task
+        function deleteTask(id) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                const taskRef = database.ref('Tasks/' + id);
+                taskRef.remove()
+                    .then(() => {
+                        console.log('Task deleted successfully');
+                        loadTasks(document.getElementById('user-name').value);
+                    })
+                    .catch((error) => {
+                        console.error('Error deleting task: ', error);
+                    });
+            }
+        }
+
+        // Handle adding and saving Google Calendar link for the selected user
+        document.getElementById('add-calendar-btn').addEventListener('click', function() {
+            const calendarUrl = document.getElementById('calendar-url').value;
+            const selectedUser = document.getElementById('user-name').value;
+
+            // Ensure a user is selected before adding the calendar URL
+            if (!selectedUser || selectedUser === 'add-user') {
+                alert('Please select a user from the dropdown before adding your calendar URL.');
+                return;
+            }
+
+            if (calendarUrl) {
+                const userRef = database.ref('users').orderByChild('name').equalTo(selectedUser);
+                userRef.once('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const userKey = Object.keys(data)[0];
+                        database.ref('users/' + userKey).update({ calendarUrl: calendarUrl })
+                            .then(() => {
+                                displayCalendarLink(calendarUrl);
+                                console.log('Google Calendar link saved for user:', selectedUser);
+                            })
+                            .catch((error) => {
+                                console.error('Error saving calendar link: ', error);
+                            });
+                    }
+                });
             } else {
-                document.getElementById('add-category-form').classList.remove('show');
+                alert('Please paste a valid Google Calendar URL.');
             }
         });
-        document.getElementById('add-category-btn').addEventListener('click', addCategory);
 
-        // Initialize the page
-        loadCategories();
-        loadSubcontractors();
-        setupSearch();
+        // Display the stored Google Calendar link
+        function displayCalendarLink(calendarUrl) {
+            const calendarLinkContainer = document.getElementById('calendar-link-container');
+            calendarLinkContainer.innerHTML = `
+                <a href="${calendarUrl}" target="_blank" class="calendar-link-btn">Open Google Calendar</a>
+            `;
+        }
+
+        // Load Google Calendar link when a user is selected
+        document.getElementById('user-name').addEventListener('change', function() {
+            const selectedUser = this.value;
+            if (selectedUser === 'add-user') {
+                addNewUser();
+            } else if (selectedUser) {
+                loadTasks(selectedUser);
+                const userRef = database.ref('users').orderByChild('name').equalTo(selectedUser);
+                userRef.once('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const userKey = Object.keys(data)[0];
+                        const calendarUrl = data[userKey].calendarUrl;
+                        if (calendarUrl) {
+                            displayCalendarLink(calendarUrl);
+                        } else {
+                            document.getElementById('calendar-link-container').innerHTML = '';
+                        }
+                    }
+                });
+            }
+        });
+
+        // Initialize
+        generateCalendar();
+        loadUsers(); // Load users when the page loads
+        document.getElementById('task-form').addEventListener('submit', addTask); // Ensure the addTask function is properly attached
     </script>
 </body>
 </html>

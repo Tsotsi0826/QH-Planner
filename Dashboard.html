@@ -101,14 +101,13 @@
         </div>
         <div class="tile" onclick="showDetails('running-projects')" aria-label="Running Projects">
             <div class="tile-icon">📆</div>
-            <div the="tile-title">Running Projects</div>
+            <div class="tile-title">Running Projects</div>
         </div>
         <div class="tile" onclick="showDetails('tasks')" aria-label="Tasks">
             <div class="tile-icon">📝</div>
             <div class="tile-title">Tasks</div>
         </div>
-        <!-- Added Sub Contractors tile linked to GitHub -->
-        <div class="tile" onclick="window.location.href='https://github.com/Tsotsi0826/QH-Planner/tree/main/Subcontractors'" aria-label="Sub Contractors">
+        <div class="tile" onclick="showDetails('sub-contractors')" aria-label="Sub Contractors">
             <div class="tile-icon">👷</div>
             <div class="tile-title">Sub Contractors</div>
         </div>
@@ -123,8 +122,7 @@
                 'meetings': 'https://tsotsi0826.github.io/QH-Planner/Meetings.html',
                 'running-projects': 'https://tsotsi0826.github.io/QH-Planner/Running%20Projects.html',
                 'tasks': 'https://tsotsi0826.github.io/QH-Planner/Tasks.html',
-                // Correct URL for Sub Contractors
-                'sub-contractors': 'https://github.com/Tsotsi0826/QH-Planner/tree/main/Subcontractors'
+                'sub-contractors': 'https://tsotsi0826.github.io/QH-Planner/Subcontractors.html'  // Corrected link to Sub Contractors page
             };
 
             const file = categoryFiles[category];

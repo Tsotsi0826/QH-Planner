@@ -275,7 +275,7 @@
             database.ref('Tasks').push(newTask)
                 .then(() => {
                     console.log('Task added successfully');
-                    event.target.reset();
+                    document.getElementById('task-form').reset();
                     loadTasks(userName);
                 })
                 .catch((error) => {
@@ -434,6 +434,7 @@
         // Initialize
         generateCalendar();
         loadUsers(); // Load users when the page loads
+        document.getElementById('task-form').addEventListener('submit', addTask);
     </script>
 </body>
 </html>

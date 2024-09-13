@@ -273,7 +273,7 @@
             userSelect.innerHTML = `<option value="">Select User</option><option value="add-user">Add New User</option>`;
 
             // Reference to MeetingUsers node in Firebase
-            const usersRef = database.ref('Meetings/MeetingUsers');
+            const usersRef = database.ref('Meetings/Users');
 
             // Fetch and list users
             usersRef.once('value', (snapshot) => {
@@ -302,9 +302,9 @@
             }
         });
 
-        // Function to add or update user in the MeetingUsers node
+        // Function to add or update user in the Meetings/Users node
         function addNewUser(userName) {
-            const usersRef = database.ref('Meetings/MeetingUsers').push();
+            const usersRef = database.ref('Meetings/Users').push();
             usersRef.set({ name: userName })
                 .then(() => {
                     alert('User added successfully');

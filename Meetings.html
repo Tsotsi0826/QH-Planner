@@ -8,7 +8,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        /* CSS styles remain unchanged */
         :root {
             --primary-color: #3498db;
             --secondary-color: #2ecc71;
@@ -235,10 +234,10 @@
             }
         }
 
-        // Load users from Firebase and populate the dropdown
+        // Load users from 'MeetingUsers' node and populate the dropdown
         function loadUsers() {
             const userSelect = document.getElementById('user-name');
-            const usersRef = database.ref('users');
+            const usersRef = database.ref('MeetingUsers');
 
             // Clear existing options except the default ones
             userSelect.innerHTML = `
@@ -258,11 +257,11 @@
             });
         }
 
-        // Add new user and save to Firebase
+        // Add new user and save to 'MeetingUsers' node in Firebase
         function addNewUser() {
             const newUserName = prompt("Enter new user's name:");
             if (newUserName) {
-                const userRef = database.ref('users').push();
+                const userRef = database.ref('MeetingUsers').push();
                 userRef.set({ name: newUserName, calendarUrl: "" })
                     .then(() => {
                         const userSelect = document.getElementById('user-name');
@@ -276,7 +275,7 @@
                         loadTodos(newUserName);
                     })
                     .catch((error) => {
-                        console.error('Error adding user: ', error);
+                        console.error('Error adding user:', error);
                     });
             }
         }
@@ -308,7 +307,7 @@
                     loadMeetings(userName);
                 })
                 .catch((error) => {
-                    console.error('Error adding meeting: ', error.message);
+                    console.error('Error adding meeting:', error.message);
                     alert(`Failed to add meeting: ${error.message}`);
                 });
         }
@@ -341,16 +340,16 @@
                     loadTodos(userName);
                 })
                 .catch((error) => {
-                    console.error('Error adding todo: ', error.message);
+                    console.error('Error adding todo:', error.message);
                     alert(`Failed to add todo: ${error.message}`);
                 });
         }
 
-        // Event listeners for forms
+        // Event listeners for form submissions
         document.getElementById('meeting-form').addEventListener('submit', addMeeting);
         document.getElementById('todo-form').addEventListener('submit', addTodo);
 
-        // Load users when the page loads
+        // Initialize and load users when the page loads
         generateCalendar();
         loadUsers();
     </script>

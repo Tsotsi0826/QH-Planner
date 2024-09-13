@@ -216,7 +216,7 @@
             const userSelect = document.getElementById('user-name');
             const usersRef = database.ref('users');
 
-            // Clear existing options and add the default options
+            // Clear existing options except the default ones
             userSelect.innerHTML = `
                 <option value="">Select User</option>
                 <option value="add-user">Add New User</option>
@@ -225,32 +225,30 @@
             // Load users from Firebase and add them to the dropdown
             usersRef.on('value', (snapshot) => {
                 const data = snapshot.val();
-                const addedUsers = new Set(); // Set to track unique users
-
                 for (let id in data) {
-                    const userName = data[id].name.trim(); // Trim whitespace
-
-                    // Check for empty or duplicate usernames
-                    if (userName && !addedUsers.has(userName)) {
-                        const userOption = document.createElement('option');
-                        userOption.value = userName;
-                        userOption.textContent = userName;
-                        userSelect.insertBefore(userOption, userSelect.lastElementChild);
-                        addedUsers.add(userName); // Track added usernames
-                    }
+                    const userOption = document.createElement('option');
+                    userOption.value = data[id].name;
+                    userOption.textContent = data[id].name;
+                    userSelect.insertBefore(userOption, userSelect.lastElementChild);
                 }
             });
         }
 
         // Add new user and save to Firebase
         function addNewUser() {
-            const newUserName = prompt("Enter new user's name:").trim(); // Trim whitespace
+            const newUserName = prompt("Enter new user's name:");
             if (newUserName) {
                 const userRef = database.ref('users').push();
                 userRef.set({ name: newUserName, calendarUrl: "" })
                     .then(() => {
-                        loadUsers(); // Reload users to update the dropdown immediately
+                        const userSelect = document.getElementById('user-name');
+                        const newOption = document.createElement('option');
+                        newOption.value = newUserName;
+                        newOption.textContent = newUserName;
+                        userSelect.insertBefore(newOption, userSelect.lastElementChild);
+                        userSelect.value = newUserName;
                         console.log('User added successfully');
+                        loadTasks(newUserName);
                     })
                     .catch((error) => {
                         console.error('Error adding user: ', error);

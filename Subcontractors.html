@@ -325,15 +325,16 @@
         }
 
         // Load subcontractors from Firebase
+        let allSubcontractors = {}; // Store all subcontractors for search filtering
         function loadSubcontractors() {
             const subcontractorsGrid = document.getElementById('subcontractors-grid');
             const subcontractorsRef = database.ref('subcontractors');
 
             subcontractorsRef.on('value', (snapshot) => {
                 subcontractorsGrid.innerHTML = '';
-                const data = snapshot.val();
-                for (let id in data) {
-                    const subcontractor = data[id];
+                allSubcontractors = snapshot.val() || {}; // Store data globally
+                for (let id in allSubcontractors) {
+                    const subcontractor = allSubcontractors[id];
                     const card = createSubcontractorCard(id, subcontractor);
                     subcontractorsGrid.appendChild(card);
                 }
@@ -411,6 +412,24 @@
                     });
             }
         }
+
+        // Real-time search function
+        document.getElementById('search-input').addEventListener('input', function () {
+            const searchTerm = this.value.toLowerCase();
+            const subcontractorsGrid = document.getElementById('subcontractors-grid');
+            subcontractorsGrid.innerHTML = '';
+
+            for (let id in allSubcontractors) {
+                const subcontractor = allSubcontractors[id];
+                const nameMatch = subcontractor.name.toLowerCase().includes(searchTerm);
+                const categoryMatch = subcontractor.category.toLowerCase().includes(searchTerm);
+
+                if (nameMatch || categoryMatch) {
+                    const card = createSubcontractorCard(id, subcontractor);
+                    subcontractorsGrid.appendChild(card);
+                }
+            }
+        });
 
         // Initialize the page with data from Firebase
         loadCategories();

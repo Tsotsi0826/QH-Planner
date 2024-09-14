@@ -254,42 +254,67 @@
         // Get a reference to the database service
         const database = firebase.database();
 
-        // Load categories from Firebase
+        // Load categories from Firebase and sort them alphabetically
         function loadCategories() {
             const categorySelect = document.getElementById('sub-category');
             const categoriesRef = database.ref('Categories');
 
             categoriesRef.on('value', (snapshot) => {
                 const data = snapshot.val();
-                const currentOptions = Array.from(categorySelect.options).map(option => option.value);
-                
+                const categories = [];
+
                 for (let id in data) {
-                    if (!currentOptions.includes(data[id])) {
-                        const option = document.createElement('option');
-                        option.value = data[id];
-                        option.textContent = data[id];
-                        categorySelect.insertBefore(option, categorySelect.firstElementChild.nextSibling);
-                    }
+                    categories.push(data[id]);
                 }
+
+                // Sort categories alphabetically
+                categories.sort((a, b) => a.localeCompare(b));
+
+                // Reset the select options
+                categorySelect.innerHTML = `
+                    <option value="add-category">+ Add New Category</option>
+                    <option value="">Select a category</option>
+                `;
+
+                // Add sorted categories to the select dropdown
+                categories.forEach((category) => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    categorySelect.insertBefore(option, categorySelect.lastElementChild);
+                });
             });
         }
 
         // Add a new category
         function addCategory() {
             const newCategoryName = document.getElementById('new-category-name').value.trim();
+            const addCategoryBtn = document.getElementById('add-category-btn');
+
             if (newCategoryName) {
+                addCategoryBtn.disabled = true; // Disable the button to prevent multiple clicks
                 const categoriesRef = database.ref('Categories');
                 categoriesRef.push(newCategoryName)
                     .then(() => {
                         console.log('Category added successfully');
+                        const categorySelect = document.getElementById('sub-category');
+                        const newOption = document.createElement('option');
+                        newOption.value = newCategoryName;
+                        newOption.textContent = newCategoryName;
+                        categorySelect.insertBefore(newOption, categorySelect.firstElementChild.nextSibling);
+                        categorySelect.value = newCategoryName;
                         document.getElementById('new-category-name').value = '';
                         document.getElementById('add-category-form').classList.remove('show');
-                        loadCategories(); // Reload categories to reflect the new addition
                     })
                     .catch((error) => {
                         console.error('Error adding category:', error.message);
                         alert(`Failed to add category: ${error.message}`);
+                    })
+                    .finally(() => {
+                        addCategoryBtn.disabled = false; // Re-enable the button after processing
                     });
+            } else {
+                alert("Please enter a category name.");
             }
         }
 
@@ -300,6 +325,11 @@
             const name = document.getElementById('sub-name').value;
             const contact = document.getElementById('sub-contact').value;
             const email = document.getElementById('sub-email').value;
+
+            if (category === 'add-category' || category === '') {
+                alert('Please add or select a valid category.');
+                return;
+            }
 
             const newSubcontractor = {
                 category: category,
@@ -325,20 +355,29 @@
         }
 
         // Load subcontractors from Firebase
-        let allSubcontractors = {}; // Store all subcontractors for search filtering
+        let allSubcontractors = {}; // Store all subcontractors for filtering
         function loadSubcontractors() {
-            const subcontractorsGrid = document.getElementById('subcontractors-grid');
             const subcontractorsRef = database.ref('subcontractors');
 
             subcontractorsRef.on('value', (snapshot) => {
-                subcontractorsGrid.innerHTML = '';
                 allSubcontractors = snapshot.val() || {}; // Store data globally
-                for (let id in allSubcontractors) {
-                    const subcontractor = allSubcontractors[id];
+                filterSubcontractors(); // Filter subcontractors based on the selected category
+            });
+        }
+
+        // Filter subcontractors based on the selected category
+        function filterSubcontractors() {
+            const selectedCategory = document.getElementById('sub-category').value;
+            const subcontractorsGrid = document.getElementById('subcontractors-grid');
+            subcontractorsGrid.innerHTML = '';
+
+            for (let id in allSubcontractors) {
+                const subcontractor = allSubcontractors[id];
+                if (subcontractor.category === selectedCategory) {
                     const card = createSubcontractorCard(id, subcontractor);
                     subcontractorsGrid.appendChild(card);
                 }
-            });
+            }
         }
 
         // Create a subcontractor card
@@ -405,6 +444,7 @@
                 database.ref(`subcontractors/${id}`).remove()
                     .then(() => {
                         console.log('Subcontractor deleted successfully');
+                        filterSubcontractors(); // Refresh the displayed subcontractors
                     })
                     .catch((error) => {
                         console.error('Error deleting subcontractor:', error.message);
@@ -416,15 +456,16 @@
         // Real-time search function
         document.getElementById('search-input').addEventListener('input', function () {
             const searchTerm = this.value.toLowerCase();
+            const selectedCategory = document.getElementById('sub-category').value;
             const subcontractorsGrid = document.getElementById('subcontractors-grid');
             subcontractorsGrid.innerHTML = '';
 
             for (let id in allSubcontractors) {
                 const subcontractor = allSubcontractors[id];
                 const nameMatch = subcontractor.name.toLowerCase().includes(searchTerm);
-                const categoryMatch = subcontractor.category.toLowerCase().includes(searchTerm);
+                const categoryMatch = subcontractor.category === selectedCategory;
 
-                if (nameMatch || categoryMatch) {
+                if (nameMatch && categoryMatch) {
                     const card = createSubcontractorCard(id, subcontractor);
                     subcontractorsGrid.appendChild(card);
                 }
@@ -443,8 +484,10 @@
         document.getElementById('sub-category').addEventListener('change', function () {
             if (this.value === 'add-category') {
                 document.getElementById('add-category-form').classList.add('show');
+                document.getElementById('new-category-name').focus(); // Focus on the input field for better UX
             } else {
                 document.getElementById('add-category-form').classList.remove('show');
+                filterSubcontractors(); // Filter cards based on selected category
             }
         });
     </script>

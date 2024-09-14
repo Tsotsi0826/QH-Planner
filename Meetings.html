@@ -200,8 +200,8 @@
 
             <!-- Google Calendar URL input and button -->
             <div class="calendar-url-container">
-                <input type="url" id="calendar-url" placeholder="Paste your Google Calendar URL">
-                <button id="add-calendar-btn">Add Calendar</button>
+                <input type="url" id="calendar-url" placeholder="Paste your Google Calendar URL" disabled>
+                <button id="add-calendar-btn" disabled>Add Calendar</button>
             </div>
             <div id="calendar-link-container"></div>
         </div>
@@ -291,12 +291,19 @@
         // Event listener to show input box when "Add New User" is selected
         document.getElementById('user-name').addEventListener('change', function() {
             const newUserInput = document.getElementById('new-user-name');
+            const calendarUrlInput = document.getElementById('calendar-url');
+            const addCalendarBtn = document.getElementById('add-calendar-btn');
+
             if (this.value === 'add-user') {
                 newUserInput.style.display = 'block';
-                newUserInput.focus();
+                calendarUrlInput.disabled = true;
+                addCalendarBtn.disabled = true;
             } else {
                 newUserInput.style.display = 'none';
-                loadMeetings(this.value); // Load meetings when a user is selected
+                calendarUrlInput.disabled = false;
+                addCalendarBtn.disabled = false;
+                loadMeetings(this.value);
+                loadCalendarLink(this.value);
             }
         });
 
@@ -460,8 +467,9 @@
             }
 
             if (calendarUrl) {
-                const calendarRef = database.ref('MeetingsGoogle').push();
-                calendarRef.set({ user: selectedUser, url: calendarUrl })
+                // Save the calendar URL under the specific user's node in MeetingsGoogle
+                const calendarRef = database.ref(`MeetingsGoogle/${selectedUser}`);
+                calendarRef.set({ url: calendarUrl })
                     .then(() => {
                         alert('Google Calendar link saved successfully');
                         displayCalendarLink(calendarUrl);
@@ -481,6 +489,22 @@
             calendarLinkContainer.innerHTML = `
                 <a href="${calendarUrl}" target="_blank" class="calendar-link-btn">Open Google Calendar</a>
             `;
+        }
+
+        // Load the calendar link for the selected user
+        function loadCalendarLink(userId) {
+            const calendarLinkContainer = document.getElementById('calendar-link-container');
+            calendarLinkContainer.innerHTML = ''; // Clear previous link
+
+            if (userId && userId !== 'add-user') {
+                const calendarRef = database.ref(`MeetingsGoogle/${userId}`);
+                calendarRef.once('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data && data.url) {
+                        displayCalendarLink(data.url);
+                    }
+                });
+            }
         }
 
         // Load users and generate the calendar on page load

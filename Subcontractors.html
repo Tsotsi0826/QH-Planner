@@ -202,8 +202,8 @@
                 <div class="form-group">
                     <label for="sub-category">Category:</label>
                     <select id="sub-category" required>
-                        <option value="">Select a category</option>
                         <option value="add-category">+ Add New Category</option>
+                        <option value="">Select a category</option>
                     </select>
                     <div id="add-category-form">
                         <input type="text" id="new-category-name" placeholder="Enter new category name">
@@ -268,7 +268,7 @@
                         const option = document.createElement('option');
                         option.value = data[id];
                         option.textContent = data[id];
-                        categorySelect.insertBefore(option, categorySelect.lastElementChild);
+                        categorySelect.insertBefore(option, categorySelect.firstElementChild.nextSibling);
                     }
                 }
             });
@@ -284,7 +284,7 @@
                         console.log('Category added successfully');
                         document.getElementById('new-category-name').value = '';
                         document.getElementById('add-category-form').classList.remove('show');
-                        document.getElementById('sub-category').value = newCategoryName;
+                        loadCategories(); // Reload categories to reflect the new addition
                     })
                     .catch((error) => {
                         console.error('Error adding category:', error.message);
@@ -438,6 +438,15 @@
         // Event listeners
         document.getElementById('add-category-btn').addEventListener('click', addCategory);
         document.getElementById('subcontractor-form').addEventListener('submit', addSubcontractor);
+
+        // Show the add category input when "Add New Category" is selected
+        document.getElementById('sub-category').addEventListener('change', function () {
+            if (this.value === 'add-category') {
+                document.getElementById('add-category-form').classList.add('show');
+            } else {
+                document.getElementById('add-category-form').classList.remove('show');
+            }
+        });
     </script>
 </body>
 </html>

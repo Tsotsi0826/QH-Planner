@@ -165,7 +165,7 @@
             display: flex;
             gap: 5px;
         }
-        .edit-btn, .delete-btn {
+        .edit-btn {
             background-color: var(--primary-color);
             color: white;
             border: none;
@@ -176,6 +176,12 @@
         }
         .delete-btn {
             background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
         }
         .edit-form {
             display: none;
@@ -233,6 +239,10 @@
             border: 1px solid var(--border-color);
             border-radius: 4px;
             margin-right: 5px;
+        }
+        .category-item .delete-btn {
+            background-color: #e74c3c;
+            margin-left: 5px;
         }
     </style>
 </head>
@@ -292,7 +302,7 @@
     </div>
 
     <!-- Category Edit Modal -->
-    <div class="category-edit-container" id="category-edit-container">
+    <div class="category-edit-container" id="category-edit-container" style="display: none;">
         <div class="category-edit-box">
             <h3>Edit Categories</h3>
             <div id="category-list"></div>
@@ -382,7 +392,7 @@
                 categoryItem.innerHTML = `
                     <input type="text" value="${name}" id="edit-category-${id}">
                     <button onclick="updateCategory('${id}')">Save</button>
-                    <button onclick="deleteCategory('${id}')">Delete</button>
+                    <button class="delete-btn" onclick="deleteCategory('${id}')">Delete</button>
                 `;
                 categoryList.appendChild(categoryItem);
             });

@@ -377,22 +377,25 @@
 
             subcontractorsRef.on('value', (snapshot) => {
                 allSubcontractors = snapshot.val() || {}; // Store data globally
-                filterSubcontractors(); // Filter subcontractors based on the selected category
+                clearDisplay(); // Clear display initially
             });
         }
 
-        // Filter subcontractors based on the selected category
-        function filterSubcontractors() {
-            const selectedCategory = document.getElementById('sub-category').value;
+        // Clear display
+        function clearDisplay() {
+            const subcontractorsGrid = document.getElementById('subcontractors-grid');
+            subcontractorsGrid.innerHTML = '';
+        }
+
+        // Display subcontractors based on the data provided
+        function displaySubcontractors(subcontractors) {
             const subcontractorsGrid = document.getElementById('subcontractors-grid');
             subcontractorsGrid.innerHTML = '';
 
-            for (let id in allSubcontractors) {
-                const subcontractor = allSubcontractors[id];
-                if (subcontractor.category === selectedCategory) {
-                    const card = createSubcontractorCard(id, subcontractor);
-                    subcontractorsGrid.appendChild(card);
-                }
+            for (let id in subcontractors) {
+                const subcontractor = subcontractors[id];
+                const card = createSubcontractorCard(id, subcontractor);
+                subcontractorsGrid.appendChild(card);
             }
         }
 
@@ -466,7 +469,7 @@
                 database.ref(`subcontractors/${id}`).remove()
                     .then(() => {
                         console.log('Subcontractor deleted successfully');
-                        filterSubcontractors(); // Refresh the displayed subcontractors
+                        clearDisplay(); // Refresh the displayed subcontractors
                     })
                     .catch((error) => {
                         console.error('Error deleting subcontractor:', error.message);
@@ -478,20 +481,19 @@
         // Real-time search function
         document.getElementById('search-input').addEventListener('input', function () {
             const searchTerm = this.value.toLowerCase();
-            const selectedCategory = document.getElementById('sub-category').value;
-            const subcontractorsGrid = document.getElementById('subcontractors-grid');
-            subcontractorsGrid.innerHTML = '';
+            const filteredSubcontractors = {};
 
+            // Filter through all subcontractors based on any field match
             for (let id in allSubcontractors) {
                 const subcontractor = allSubcontractors[id];
-                const nameMatch = subcontractor.name.toLowerCase().includes(searchTerm);
-                const categoryMatch = subcontractor.category === selectedCategory;
+                const matches = subcontractor.name.toLowerCase().includes(searchTerm);
 
-                if (nameMatch && categoryMatch) {
-                    const card = createSubcontractorCard(id, subcontractor);
-                    subcontractorsGrid.appendChild(card);
+                if (matches) {
+                    filteredSubcontractors[id] = subcontractor;
                 }
             }
+
+            displaySubcontractors(filteredSubcontractors); // Display only the matching subcontractors
         });
 
         // Initialize the page with data from Firebase
@@ -504,12 +506,24 @@
 
         // Show the add category input when "Add New Category" is selected
         document.getElementById('sub-category').addEventListener('change', function () {
-            if (this.value === 'add-category') {
+            const selectedCategory = this.value;
+
+            if (selectedCategory === 'add-category') {
                 document.getElementById('add-category-form').classList.add('show');
                 document.getElementById('new-category-name').focus(); // Focus on the input field for better UX
-            } else {
+            } else if (selectedCategory) {
                 document.getElementById('add-category-form').classList.remove('show');
-                filterSubcontractors(); // Filter cards based on selected category
+                // Display cards only for the selected category
+                const filteredSubcontractors = {};
+                for (let id in allSubcontractors) {
+                    if (allSubcontractors[id].category === selectedCategory) {
+                        filteredSubcontractors[id] = allSubcontractors[id];
+                    }
+                }
+                displaySubcontractors(filteredSubcontractors);
+            } else {
+                // If no category is selected, clear the display
+                clearDisplay();
             }
         });
     </script>

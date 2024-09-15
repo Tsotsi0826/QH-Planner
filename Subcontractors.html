@@ -200,6 +200,40 @@
             margin-right: 5px;
             fill: var(--secondary-color);
         }
+        .category-edit-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .category-edit-box {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .category-item input {
+            flex: 1;
+            padding: 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
@@ -221,6 +255,7 @@
                         <option value="add-category">+ Add New Category</option>
                         <option value="">Select a category</option>
                     </select>
+                    <button type="button" id="edit-categories-btn">Edit Categories</button>
                     <div id="add-category-form">
                         <input type="text" id="new-category-name" placeholder="Enter new category name">
                         <button type="button" id="add-category-btn">Add</button>
@@ -256,6 +291,15 @@
         </div>
     </div>
 
+    <!-- Category Edit Modal -->
+    <div class="category-edit-container" id="category-edit-container">
+        <div class="category-edit-box">
+            <h3>Edit Categories</h3>
+            <div id="category-list"></div>
+            <button onclick="closeCategoryEdit()">Close</button>
+        </div>
+    </div>
+
     <script>
         // Firebase configuration
         const firebaseConfig = {
@@ -271,20 +315,17 @@
         const database = firebase.database();
 
         // Load categories from Firebase and sort them alphabetically
+        let categoriesData = {}; // Store categories with their IDs
         function loadCategories() {
             const categorySelect = document.getElementById('sub-category');
             const categoriesRef = database.ref('Categories');
 
             categoriesRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                const categories = [];
-
-                for (let id in data) {
-                    categories.push(data[id]);
-                }
+                categoriesData = snapshot.val() || {};
+                const categories = Object.entries(categoriesData).map(([id, name]) => ({ id, name }));
 
                 // Sort categories alphabetically
-                categories.sort((a, b) => a.localeCompare(b));
+                categories.sort((a, b) => a.name.localeCompare(b.name));
 
                 // Reset the select options
                 categorySelect.innerHTML = `
@@ -293,10 +334,10 @@
                 `;
 
                 // Add sorted categories to the select dropdown
-                categories.forEach((category) => {
+                categories.forEach(({ id, name }) => {
                     const option = document.createElement('option');
-                    option.value = category;
-                    option.textContent = category;
+                    option.value = id;
+                    option.textContent = name;
                     categorySelect.insertBefore(option, categorySelect.lastElementChild);
                 });
             });
@@ -313,12 +354,6 @@
                 categoriesRef.push(newCategoryName)
                     .then(() => {
                         console.log('Category added successfully');
-                        const categorySelect = document.getElementById('sub-category');
-                        const newOption = document.createElement('option');
-                        newOption.value = newCategoryName;
-                        newOption.textContent = newCategoryName;
-                        categorySelect.insertBefore(newOption, categorySelect.firstElementChild.nextSibling);
-                        categorySelect.value = newCategoryName;
                         document.getElementById('new-category-name').value = '';
                         document.getElementById('add-category-form').classList.remove('show');
                     })
@@ -331,6 +366,65 @@
                     });
             } else {
                 alert("Please enter a category name.");
+            }
+        }
+
+        // Show the category edit modal
+        document.getElementById('edit-categories-btn').addEventListener('click', function () {
+            const categoryEditContainer = document.getElementById('category-edit-container');
+            const categoryList = document.getElementById('category-list');
+            categoryList.innerHTML = '';
+
+            // Create a list of categories with edit and delete options
+            Object.entries(categoriesData).forEach(([id, name]) => {
+                const categoryItem = document.createElement('div');
+                categoryItem.classList.add('category-item');
+                categoryItem.innerHTML = `
+                    <input type="text" value="${name}" id="edit-category-${id}">
+                    <button onclick="updateCategory('${id}')">Save</button>
+                    <button onclick="deleteCategory('${id}')">Delete</button>
+                `;
+                categoryList.appendChild(categoryItem);
+            });
+
+            categoryEditContainer.style.display = 'flex';
+        });
+
+        // Close the category edit modal
+        function closeCategoryEdit() {
+            document.getElementById('category-edit-container').style.display = 'none';
+        }
+
+        // Update a category in Firebase
+        function updateCategory(id) {
+            const newName = document.getElementById(`edit-category-${id}`).value.trim();
+            if (newName) {
+                database.ref(`Categories/${id}`).set(newName)
+                    .then(() => {
+                        console.log('Category updated successfully');
+                        loadCategories(); // Reload categories to reflect changes
+                    })
+                    .catch((error) => {
+                        console.error('Error updating category:', error.message);
+                        alert(`Failed to update category: ${error.message}`);
+                    });
+            } else {
+                alert("Category name cannot be empty.");
+            }
+        }
+
+        // Delete a category from Firebase
+        function deleteCategory(id) {
+            if (confirm('Are you sure you want to delete this category?')) {
+                database.ref(`Categories/${id}`).remove()
+                    .then(() => {
+                        console.log('Category deleted successfully');
+                        loadCategories(); // Reload categories after deletion
+                    })
+                    .catch((error) => {
+                        console.error('Error deleting category:', error.message);
+                        alert(`Failed to delete category: ${error.message}`);
+                    });
             }
         }
 
@@ -348,7 +442,7 @@
             }
 
             const newSubcontractor = {
-                category: category,
+                category: categoriesData[category],
                 name: name,
                 contact: contact,
             };
@@ -516,7 +610,7 @@
                 // Display cards only for the selected category
                 const filteredSubcontractors = {};
                 for (let id in allSubcontractors) {
-                    if (allSubcontractors[id].category === selectedCategory) {
+                    if (allSubcontractors[id].category === categoriesData[selectedCategory]) {
                         filteredSubcontractors[id] = allSubcontractors[id];
                     }
                 }

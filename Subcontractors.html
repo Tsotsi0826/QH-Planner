@@ -240,9 +240,21 @@
             border-radius: 4px;
             margin-right: 5px;
         }
-        .category-item .delete-btn {
-            background-color: #e74c3c;
-            margin-left: 5px;
+        .icon-btn {
+            border: none;
+            background: none;
+            cursor: pointer;
+            padding: 5px;
+            transition: color 0.3s ease;
+        }
+        .icon-btn:hover {
+            color: #3a7bbf;
+        }
+        .icon-save {
+            color: #50c878; /* Green for edit */
+        }
+        .icon-delete {
+            color: #e74c3c; /* Red for delete */
         }
     </style>
 </head>
@@ -391,8 +403,21 @@
                 categoryItem.classList.add('category-item');
                 categoryItem.innerHTML = `
                     <input type="text" value="${name}" id="edit-category-${id}">
-                    <button onclick="updateCategory('${id}')">Save</button>
-                    <button class="delete-btn" onclick="deleteCategory('${id}')">Delete</button>
+                    <button class="icon-btn icon-save" onclick="updateCategory('${id}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"></path>
+                            <path d="M16 4l4 4"></path>
+                            <path d="M14 10l8-8"></path>
+                        </svg>
+                    </button>
+                    <button class="icon-btn icon-delete" onclick="deleteCategory('${id}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"></path>
+                            <path d="M6 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"></path>
+                            <path d="M10 11v6"></path>
+                            <path d="M14 11v6"></path>
+                        </svg>
+                    </button>
                 `;
                 categoryList.appendChild(categoryItem);
             });

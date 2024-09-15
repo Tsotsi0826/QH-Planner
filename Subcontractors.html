@@ -184,6 +184,22 @@
         .edit-form.show {
             display: block;
         }
+        .phone-link {
+            display: flex;
+            align-items: center;
+            color: var(--secondary-color);
+            text-decoration: none;
+            margin-top: 5px;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+        .phone-link:hover {
+            color: #3a7bbf;
+        }
+        .phone-icon {
+            margin-right: 5px;
+            fill: var(--secondary-color);
+        }
     </style>
 </head>
 <body>
@@ -388,6 +404,12 @@
                 <div class="category-tag">${subcontractor.category}</div>
                 <h3>${subcontractor.name}</h3>
                 <p>Contact: ${subcontractor.contact}</p>
+                <a href="tel:${subcontractor.contact}" class="phone-link">
+                    <svg class="phone-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 16.92V21a2 2 0 0 1-2.18 2 19.74 19.74 0 0 1-8.63-3.14A19.56 19.56 0 0 1 3.14 8.63 19.74 19.74 0 0 1 0 0a2 2 0 0 1 2-2h4.09a2 2 0 0 1 2 1.72c.12.69.29 1.37.5 2.02a2 2 0 0 1-.45 1.9l-2.13 2.13a16.06 16.06 0 0 0 6.72 6.72l2.13-2.13a2 2 0 0 1 1.9-.45c.65.21 1.33.38 2.02.5a2 2 0 0 1 1.72 2.04z"></path>
+                    </svg>
+                    Call
+                </a>
                 ${subcontractor.email ? `<p>Email: ${subcontractor.email}</p>` : ''}
                 <div class="card-actions">
                     <button class="edit-btn" onclick="showEditForm('${id}')">Edit</button>

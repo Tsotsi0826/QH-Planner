@@ -239,9 +239,10 @@
             };
 
             // Push new project data to the ProjectPlanning node
-            projectPlanningRef.push(projectData)
+            const newEntryRef = projectPlanningRef.push();
+            newEntryRef.set(projectData)
                 .then(() => {
-                    addTodoItem(startDate, projectName, todos);
+                    addTodoItem(newEntryRef.key, startDate, projectName, todos);
                     document.getElementById('current-project').textContent = ` - ${projectName}`;
                     alert(`Project ${projectName} has been saved successfully to ProjectPlanning!`);
                 })
@@ -251,19 +252,20 @@
         });
 
         // Function to add a to-do item to the list
-        function addTodoItem(date, projectName, todoText) {
+        function addTodoItem(id, date, projectName, todoText) {
             const todoList = document.getElementById('todo-list');
             const li = document.createElement('li');
             li.className = 'todo-item';
+            li.setAttribute('data-id', id); // Store the database key
 
-            // Create elements for date, project name, and todo text
+            // Create elements for date and todo text
             const dateSpan = document.createElement('span');
             dateSpan.className = 'todo-date';
             dateSpan.textContent = date;
 
-            const span = document.createElement('span');
-            span.className = 'todo-text';
-            span.textContent = todoText;
+            const todoSpan = document.createElement('span');
+            todoSpan.className = 'todo-text';
+            todoSpan.textContent = todoText;
 
             // Create checkbox for marking the item as completed
             const checkbox = document.createElement('input');
@@ -281,19 +283,19 @@
             editBtn.className = 'edit-btn';
             editBtn.textContent = 'Edit';
             editBtn.addEventListener('click', () => {
-                editTodoItem(li, dateSpan, span);
+                editTodoItem(li, dateSpan, todoSpan);
             });
 
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
             deleteBtn.textContent = 'Delete';
             deleteBtn.addEventListener('click', () => {
-                todoList.removeChild(li);
+                deleteTodoItem(li);
             });
 
             // Append date, todo text, checkbox, and buttons to the list item
             li.appendChild(dateSpan);
-            li.appendChild(span);
+            li.appendChild(todoSpan);
             li.appendChild(checkbox);
             li.appendChild(editBtn);
             li.appendChild(deleteBtn);
@@ -309,6 +311,21 @@
 
             if (newDate !== null) dateSpan.textContent = newDate;
             if (newText !== null) todoSpan.textContent = newText;
+        }
+
+        // Function to delete a to-do item from the list and the database
+        function deleteTodoItem(li) {
+            const id = li.getAttribute('data-id');
+            if (id) {
+                projectPlanningRef.child(id).remove()
+                    .then(() => {
+                        li.remove();
+                        alert('To-do item deleted successfully.');
+                    })
+                    .catch((error) => {
+                        alert(`Failed to delete to-do item: ${error.message}`);
+                    });
+            }
         }
 
         // Load projects on page load

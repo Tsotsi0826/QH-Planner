@@ -96,7 +96,7 @@
             align-items: center;
             padding: 10px;
             border-bottom: 1px solid var(--border-color);
-            gap: 5px;
+            gap: 10px;
         }
         .task-item.completed .task-text {
             text-decoration: line-through;
@@ -107,7 +107,7 @@
             color: var(--text-color);
             font-size: 0.9em;
             flex-shrink: 0;
-            width: 80px;
+            min-width: 75px;
         }
         .task-text {
             flex: 1;
@@ -116,29 +116,30 @@
             white-space: nowrap;
         }
         .checkbox {
+            width: 20px;
+            height: 20px;
             margin: 0;
+            cursor: pointer;
+            flex-shrink: 0;
         }
         .icon-btn {
             background: none;
             border: none;
             cursor: pointer;
             padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .icon-btn .edit-icon {
+        .edit-icon {
             width: 16px;
             height: 16px;
             fill: var(--edit-color);
         }
-        .icon-btn .delete-icon {
+        .delete-icon {
             width: 16px;
             height: 16px;
             fill: var(--delete-color);
-        }
-        .icon-btn:hover .edit-icon {
-            fill: #2ecc71;
-        }
-        .icon-btn:hover .delete-icon {
-            fill: #c0392b;
         }
     </style>
 </head>
@@ -273,15 +274,6 @@
             li.className = 'task-item';
             li.setAttribute('data-id', id); // Store the database key
 
-            // Create elements for date and task text
-            const dateSpan = document.createElement('span');
-            dateSpan.className = 'task-date';
-            dateSpan.textContent = date;
-
-            const taskSpan = document.createElement('span');
-            taskSpan.className = 'task-text';
-            taskSpan.textContent = taskName;
-
             // Create checkbox for marking the task as completed
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -296,6 +288,15 @@
             if (completed) {
                 li.classList.add('completed');
             }
+
+            // Create elements for date and task text
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'task-date';
+            dateSpan.textContent = date;
+
+            const taskSpan = document.createElement('span');
+            taskSpan.className = 'task-text';
+            taskSpan.textContent = taskName;
 
             // Create edit icon button
             const editBtn = document.createElement('button');
@@ -313,10 +314,10 @@
                 deleteTaskItem(li);
             });
 
-            // Append date, task text, checkbox, edit, and delete buttons in the correct order
+            // Append checkbox, date, task text, edit, and delete buttons in the correct order
+            li.appendChild(checkbox);
             li.appendChild(dateSpan);
             li.appendChild(taskSpan);
-            li.appendChild(checkbox);
             li.appendChild(editBtn);
             li.appendChild(deleteBtn);
 

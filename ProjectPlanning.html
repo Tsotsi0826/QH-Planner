@@ -37,9 +37,15 @@
             flex: 1;
             min-width: 300px;
         }
-        h1, h2 {
+        h1 {
             color: var(--primary-color);
             margin-top: 0;
+        }
+        h2 {
+            color: var(--primary-color);
+            margin: 0;
+            display: inline-block;
+            font-size: 1.5em;
         }
         .form-group {
             margin-bottom: 15px;
@@ -89,6 +95,8 @@
             padding: 10px;
             border-bottom: 1px solid var(--border-color);
             gap: 10px;
+            overflow: hidden;
+            white-space: nowrap;
         }
         .todo-item input[type="checkbox"] {
             margin-left: auto;
@@ -100,10 +108,13 @@
         .todo-text {
             flex: 1;
             margin: 0 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .todo-date {
             margin-right: 10px;
             font-weight: bold;
+            color: var(--text-color);
         }
         .edit-btn, .delete-btn {
             padding: 5px 10px;
@@ -125,8 +136,12 @@
             display: flex;
             align-items: center;
             margin-top: 10px;
-            font-weight: bold;
-            color: var(--text-color);
+        }
+        .project-name {
+            font-size: 1.5em;
+            color: var(--primary-color);
+            margin-left: 10px;
+            font-weight: normal;
         }
     </style>
 </head>
@@ -163,7 +178,7 @@
         <div class="todo-container">
             <div class="project-display">
                 <h2>Project To Do List</h2>
-                <span id="current-project" style="margin-left: 10px;"></span>
+                <span id="current-project" class="project-name"></span>
             </div>
             <ul id="todo-list" class="todo-list">
                 <!-- To-do items will be dynamically added here -->

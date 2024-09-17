@@ -98,25 +98,26 @@
             overflow: hidden;
             white-space: nowrap;
         }
-        .todo-item input[type="checkbox"] {
-            margin-left: auto;
-        }
         .todo-item.completed .todo-text {
             text-decoration: line-through;
             color: #7f8c8d;
-        }
-        .todo-text {
-            flex: 1;
-            margin: 0 10px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap; /* Ensure text stays on one line */
         }
         .todo-date {
             margin-right: 10px;
             font-weight: bold;
             color: var(--text-color);
-            flex-shrink: 0; /* Prevent date from shrinking */
+            flex-shrink: 0;
+        }
+        .todo-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .edit-btn, .delete-btn, .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         .edit-btn, .delete-btn {
             padding: 5px 10px;
@@ -270,6 +271,9 @@
             todoSpan.textContent = todoText;
 
             // Create checkbox for marking the item as completed
+            const checkboxContainer = document.createElement('div');
+            checkboxContainer.className = 'checkbox-container';
+
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.addEventListener('change', () => {
@@ -295,12 +299,15 @@
                 deleteTodoItem(li);
             });
 
-            // Append date, todo text, checkbox, and buttons to the list item
+            // Append checkbox, edit, and delete buttons to the checkbox container
+            checkboxContainer.appendChild(checkbox);
+            checkboxContainer.appendChild(editBtn);
+            checkboxContainer.appendChild(deleteBtn);
+
+            // Append date, todo text, and checkbox container to the list item
             li.appendChild(dateSpan);
             li.appendChild(todoSpan);
-            li.appendChild(checkbox);
-            li.appendChild(editBtn);
-            li.appendChild(deleteBtn);
+            li.appendChild(checkboxContainer);
 
             // Prepend the new item to the top of the list
             todoList.insertBefore(li, todoList.firstChild);

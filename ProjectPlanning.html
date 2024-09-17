@@ -227,6 +227,26 @@
             });
         }
 
+        // Load relevant to-do items based on the selected project
+        function loadProjectTodos(projectName) {
+            const todoList = document.getElementById('todo-list');
+            todoList.innerHTML = ''; // Clear current list
+
+            projectPlanningRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    for (let id in data) {
+                        const item = data[id];
+                        if (item.projectName === projectName) {
+                            addTodoItem(id, item.date, item.projectName, item.todos);
+                        }
+                    }
+                }
+            }).catch(error => {
+                console.error('Error loading to-do items:', error);
+            });
+        }
+
         // Handle form submission for adding/updating a project
         document.getElementById('project-form').addEventListener('submit', function (event) {
             event.preventDefault();
@@ -336,6 +356,13 @@
                     });
             }
         }
+
+        // Event listener to load relevant to-do items when a project is selected
+        document.getElementById('project-name').addEventListener('change', function() {
+            const selectedProjectName = this.options[this.selectedIndex].text;
+            document.getElementById('current-project').textContent = ` - ${selectedProjectName}`;
+            loadProjectTodos(selectedProjectName);
+        });
 
         // Load projects on page load
         loadProjects();

@@ -90,7 +90,7 @@
             border-bottom: 1px solid var(--border-color);
         }
         .todo-item input[type="checkbox"] {
-            margin-right: 10px;
+            margin-left: auto;
         }
         .todo-item.completed .todo-text {
             text-decoration: line-through;
@@ -98,6 +98,11 @@
         }
         .todo-text {
             flex: 1;
+            margin: 0 10px;
+        }
+        .todo-date, .todo-project {
+            margin-right: 10px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -122,12 +127,8 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="start-date">Start Date:</label>
+                    <label for="start-date">Date:</label>
                     <input type="date" id="start-date" required>
-                </div>
-                <div class="form-group">
-                    <label for="end-date">End Date:</label>
-                    <input type="date" id="end-date" required>
                 </div>
                 <div class="form-group">
                     <label for="todos">To Do's:</label>
@@ -185,23 +186,21 @@
         // Handle form submission for adding/updating a project
         document.getElementById('project-form').addEventListener('submit', function (event) {
             event.preventDefault();
-            const projectName = document.getElementById('project-name').value;
+            const projectName = document.getElementById('project-name').options[document.getElementById('project-name').selectedIndex].text;
             const startDate = document.getElementById('start-date').value;
-            const endDate = document.getElementById('end-date').value;
             const todos = document.getElementById('todos').value;
 
             // Data to be saved to ProjectPlanning
             const projectData = {
                 projectName: projectName,
-                startDate: startDate,
-                endDate: endDate,
+                date: startDate,
                 todos: todos,
             };
 
             // Push new project data to the ProjectPlanning node
             projectPlanningRef.push(projectData)
                 .then(() => {
-                    addTodoItem(todos);
+                    addTodoItem(startDate, projectName, todos);
                     alert(`Project ${projectName} has been saved successfully to ProjectPlanning!`);
                 })
                 .catch(error => {
@@ -210,10 +209,23 @@
         });
 
         // Function to add a to-do item to the list
-        function addTodoItem(todoText) {
+        function addTodoItem(date, projectName, todoText) {
             const todoList = document.getElementById('todo-list');
             const li = document.createElement('li');
             li.className = 'todo-item';
+
+            // Create elements for date, project name, and todo text
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'todo-date';
+            dateSpan.textContent = date;
+
+            const projectSpan = document.createElement('span');
+            projectSpan.className = 'todo-project';
+            projectSpan.textContent = projectName;
+
+            const span = document.createElement('span');
+            span.className = 'todo-text';
+            span.textContent = todoText;
 
             // Create checkbox for marking the item as completed
             const checkbox = document.createElement('input');
@@ -226,14 +238,11 @@
                 }
             });
 
-            // Create span for the todo text
-            const span = document.createElement('span');
-            span.className = 'todo-text';
-            span.textContent = todoText;
-
-            // Append checkbox and text to the list item
-            li.appendChild(checkbox);
+            // Append date, project name, todo text, and checkbox to the list item
+            li.appendChild(dateSpan);
+            li.appendChild(projectSpan);
             li.appendChild(span);
+            li.appendChild(checkbox);
 
             // Prepend the new item to the top of the list
             todoList.insertBefore(li, todoList.firstChild);

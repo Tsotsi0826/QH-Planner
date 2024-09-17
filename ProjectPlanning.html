@@ -166,12 +166,19 @@
                 const data = snapshot.val();
                 if (data) {
                     for (let projectId in data) {
-                        const option = document.createElement('option');
-                        option.value = projectId;
-                        option.textContent = data[projectId].name; // Assuming the project name is stored under 'name'
-                        projectSelect.appendChild(option);
+                        const projectName = data[projectId].projectName; // Accessing the projectName field
+                        if (projectName) {
+                            const option = document.createElement('option');
+                            option.value = projectId;
+                            option.textContent = projectName;
+                            projectSelect.appendChild(option);
+                        }
                     }
+                } else {
+                    console.warn('No projects found in the database.');
                 }
+            }).catch(error => {
+                console.error('Error loading projects:', error);
             });
         }
 

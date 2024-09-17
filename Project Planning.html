@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Planning - Construction Project</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --background-color: #ecf0f1;
+            --text-color: #34495e;
+            --border-color: #bdc3c7;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+        }
+        .form-container, .calendar-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .form-container {
+            flex: 1;
+            min-width: 300px;
+        }
+        .calendar-container {
+            flex: 2;
+            min-width: 400px;
+        }
+        h1, h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #27ae60;
+        }
+        .home-link {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        .home-link svg {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <a href="Dashboard.html" class="home-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Back to Dashboard
+    </a>
+
+    <div class="container">
+        <div class="form-container">
+            <h1>Project Planning</h1>
+            <form id="project-form">
+                <div class="form-group">
+                    <label for="project-name">Select Project:</label>
+                    <select id="project-name" required>
+                        <option value="">Select a project</option>
+                        <!-- Options will be loaded from the database -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="start-date">Start Date:</label>
+                    <input type="date" id="start-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="end-date">End Date:</label>
+                    <input type="date" id="end-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="todos">To Do's:</label>
+                    <input type="text" id="todos" placeholder="E.g., Order materials, Site inspection">
+                </div>
+                <button type="submit">Update Project</button>
+            </form>
+        </div>
+        <div class="calendar-container">
+            <h2>Project Timeline</h2>
+            <div id="timeline">
+                <!-- Timeline content will be managed by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            databaseURL: "https://qh-planner-default-rtdb.firebaseio.com/",
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        // References to the relevant database nodes
+        const projectRef = firebase.database().ref('projectInfo');
+        const projectPlanningRef = firebase.database().ref('ProjectPlanning');
+
+        // Load projects from projectInfo when the page loads
+        function loadProjects() {
+            const projectSelect = document.getElementById('project-name');
+            projectRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    for (let projectId in data) {
+                        const option = document.createElement('option');
+                        option.value = projectId;
+                        option.textContent = data[projectId].name; // Assuming the project name is stored under 'name'
+                        projectSelect.appendChild(option);
+                    }
+                }
+            });
+        }
+
+        // Handle form submission for adding/updating a project
+        document.getElementById('project-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const projectName = document.getElementById('project-name').value;
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const todos = document.getElementById('todos').value;
+
+            // Data to be saved to ProjectPlanning
+            const projectData = {
+                projectName: projectName,
+                startDate: startDate,
+                endDate: endDate,
+                todos: todos,
+            };
+
+            // Push new project data to the ProjectPlanning node
+            projectPlanningRef.push(projectData)
+                .then(() => {
+                    alert(`Project ${projectName} has been saved successfully to ProjectPlanning!`);
+                })
+                .catch(error => {
+                    alert(`Failed to save project: ${error.message}`);
+                });
+        });
+
+        // Load projects on page load
+        loadProjects();
+
+        // Placeholder for generating the project timeline
+        function generateTimeline() {
+            const timeline = document.getElementById('timeline');
+            // Use JavaScript to dynamically generate the project timeline based on project data
+        }
+
+        generateTimeline();
+    </script>
+</body>
+</html>

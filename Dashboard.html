@@ -103,13 +103,17 @@
             <div class="tile-icon">📆</div>
             <div class="tile-title">Running Projects</div>
         </div>
-        <div class="tile" onclick="showDetails('tasks')" aria-label="Tasks">
+        <div class="tile" onclick="showDetails('quick-tasks-notes')" aria-label="Quick Tasks & Notes">
             <div class="tile-icon">📝</div>
-            <div class="tile-title">Tasks</div>
+            <div class="tile-title">Quick Tasks & Notes</div>
         </div>
         <div class="tile" onclick="showDetails('sub-contractors')" aria-label="Sub Contractors">
             <div class="tile-icon">👷</div>
             <div class="tile-title">Sub Contractors</div>
+        </div>
+        <div class="tile" onclick="showDetails('project-planning')" aria-label="Project Planning">
+            <div class="tile-icon">🗂️</div>
+            <div class="tile-title">Project Planning</div>
         </div>
     </div>
 
@@ -121,8 +125,9 @@
                 'project-info': 'https://tsotsi0826.github.io/QH-Planner/Project%20Info.html',
                 'meetings': 'https://tsotsi0826.github.io/QH-Planner/Meetings.html',
                 'running-projects': 'https://tsotsi0826.github.io/QH-Planner/Running%20Projects.html',
-                'tasks': 'https://tsotsi0826.github.io/QH-Planner/Tasks.html',
-                'sub-contractors': 'https://tsotsi0826.github.io/QH-Planner/Subcontractors.html'  // Corrected link to Sub Contractors page
+                'quick-tasks-notes': 'https://tsotsi0826.github.io/QH-Planner/Tasks.html', // Keeps the link for renamed tile
+                'sub-contractors': 'https://tsotsi0826.github.io/QH-Planner/Subcontractors.html',
+                'project-planning': '#' // Placeholder link, update with the correct URL
             };
 
             const file = categoryFiles[category];

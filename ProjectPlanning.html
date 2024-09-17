@@ -110,11 +110,13 @@
             margin: 0 10px;
             overflow: hidden;
             text-overflow: ellipsis;
+            white-space: nowrap; /* Ensure text stays on one line */
         }
         .todo-date {
             margin-right: 10px;
             font-weight: bold;
             color: var(--text-color);
+            flex-shrink: 0; /* Prevent date from shrinking */
         }
         .edit-btn, .delete-btn {
             padding: 5px 10px;

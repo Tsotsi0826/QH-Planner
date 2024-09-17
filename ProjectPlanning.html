@@ -97,6 +97,7 @@
             gap: 10px;
             overflow: hidden;
             white-space: nowrap;
+            cursor: pointer;
         }
         .todo-item.completed .todo-text {
             text-decoration: line-through;
@@ -113,11 +114,13 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            transition: all 0.3s ease;
+            transition: max-width 0.3s ease;
+            max-width: 200px;
         }
         .todo-text.expanded {
-            white-space: normal;
-            word-break: break-word;
+            white-space: nowrap;
+            overflow: visible;
+            max-width: 100%;
         }
         .edit-btn, .delete-btn, .checkbox-container {
             display: flex;

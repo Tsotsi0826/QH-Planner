@@ -88,6 +88,7 @@
             align-items: center;
             padding: 10px;
             border-bottom: 1px solid var(--border-color);
+            gap: 10px;
         }
         .todo-item input[type="checkbox"] {
             margin-left: auto;
@@ -100,9 +101,32 @@
             flex: 1;
             margin: 0 10px;
         }
-        .todo-date, .todo-project {
+        .todo-date {
             margin-right: 10px;
             font-weight: bold;
+        }
+        .edit-btn, .delete-btn {
+            padding: 5px 10px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .edit-btn {
+            background-color: #f39c12;
+            color: white;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .project-display {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            font-weight: bold;
+            color: var(--text-color);
         }
     </style>
 </head>
@@ -123,7 +147,6 @@
                     <label for="project-name">Select Project:</label>
                     <select id="project-name" required>
                         <option value="">Select a project</option>
-                        <!-- Options will be loaded from the database -->
                     </select>
                 </div>
                 <div class="form-group">
@@ -138,7 +161,10 @@
             </form>
         </div>
         <div class="todo-container">
-            <h2>Project To Do List</h2>
+            <div class="project-display">
+                <h2>Project To Do List</h2>
+                <span id="current-project" style="margin-left: 10px;"></span>
+            </div>
             <ul id="todo-list" class="todo-list">
                 <!-- To-do items will be dynamically added here -->
             </ul>
@@ -167,7 +193,7 @@
                 const data = snapshot.val();
                 if (data) {
                     for (let projectId in data) {
-                        const projectName = data[projectId].projectName; // Accessing the projectName field
+                        const projectName = data[projectId].projectName;
                         if (projectName) {
                             const option = document.createElement('option');
                             option.value = projectId;
@@ -201,6 +227,7 @@
             projectPlanningRef.push(projectData)
                 .then(() => {
                     addTodoItem(startDate, projectName, todos);
+                    document.getElementById('current-project').textContent = ` - ${projectName}`;
                     alert(`Project ${projectName} has been saved successfully to ProjectPlanning!`);
                 })
                 .catch(error => {
@@ -219,37 +246,6 @@
             dateSpan.className = 'todo-date';
             dateSpan.textContent = date;
 
-            const projectSpan = document.createElement('span');
-            projectSpan.className = 'todo-project';
-            projectSpan.textContent = projectName;
-
             const span = document.createElement('span');
             span.className = 'todo-text';
-            span.textContent = todoText;
-
-            // Create checkbox for marking the item as completed
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.addEventListener('change', () => {
-                if (checkbox.checked) {
-                    li.classList.add('completed');
-                } else {
-                    li.classList.remove('completed');
-                }
-            });
-
-            // Append date, project name, todo text, and checkbox to the list item
-            li.appendChild(dateSpan);
-            li.appendChild(projectSpan);
-            li.appendChild(span);
-            li.appendChild(checkbox);
-
-            // Prepend the new item to the top of the list
-            todoList.insertBefore(li, todoList.firstChild);
-        }
-
-        // Load projects on page load
-        loadProjects();
-    </script>
-</body>
-</html>
+            span.textContent = todo

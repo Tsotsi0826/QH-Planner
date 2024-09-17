@@ -113,6 +113,11 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+        .todo-text.expanded {
+            white-space: normal;
+            word-break: break-word;
         }
         .edit-btn, .delete-btn, .checkbox-container {
             display: flex;
@@ -289,6 +294,11 @@
             const todoSpan = document.createElement('span');
             todoSpan.className = 'todo-text';
             todoSpan.textContent = todoText;
+
+            // Toggle to-do text expansion on click
+            todoSpan.addEventListener('click', () => {
+                todoSpan.classList.toggle('expanded');
+            });
 
             // Create checkbox for marking the item as completed
             const checkboxContainer = document.createElement('div');

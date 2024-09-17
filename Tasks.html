@@ -97,6 +97,7 @@
             padding: 10px;
             border-bottom: 1px solid var(--border-color);
             gap: 10px;
+            cursor: pointer;
         }
         .task-item.completed .task-text {
             text-decoration: line-through;
@@ -114,6 +115,11 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+        .task-text.expanded {
+            white-space: normal;
+            word-break: break-word;
         }
         .checkbox {
             width: 20px;
@@ -297,6 +303,11 @@
             const taskSpan = document.createElement('span');
             taskSpan.className = 'task-text';
             taskSpan.textContent = taskName;
+
+            // Toggle task text expansion on click
+            taskSpan.addEventListener('click', () => {
+                taskSpan.classList.toggle('expanded');
+            });
 
             // Create edit icon button
             const editBtn = document.createElement('button');

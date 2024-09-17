@@ -29,19 +29,13 @@
             margin: 0 auto;
             flex-wrap: wrap;
         }
-        .form-container, .calendar-container {
+        .form-container, .todo-container {
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 20px;
-        }
-        .form-container {
             flex: 1;
             min-width: 300px;
-        }
-        .calendar-container {
-            flex: 2;
-            min-width: 400px;
         }
         h1, h2 {
             color: var(--primary-color);
@@ -84,6 +78,27 @@
         .home-link svg {
             margin-right: 10px;
         }
+        .todo-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .todo-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: #7f8c8d;
+        }
+        .todo-text {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -121,11 +136,11 @@
                 <button type="submit">Update Project</button>
             </form>
         </div>
-        <div class="calendar-container">
-            <h2>Project Timeline</h2>
-            <div id="timeline">
-                <!-- Timeline content will be managed by JavaScript -->
-            </div>
+        <div class="todo-container">
+            <h2>Project To Do List</h2>
+            <ul id="todo-list" class="todo-list">
+                <!-- To-do items will be dynamically added here -->
+            </ul>
         </div>
     </div>
 
@@ -179,6 +194,7 @@
             // Push new project data to the ProjectPlanning node
             projectPlanningRef.push(projectData)
                 .then(() => {
+                    addTodoItem(todos);
                     alert(`Project ${projectName} has been saved successfully to ProjectPlanning!`);
                 })
                 .catch(error => {
@@ -186,16 +202,38 @@
                 });
         });
 
-        // Load projects on page load
-        loadProjects();
+        // Function to add a to-do item to the list
+        function addTodoItem(todoText) {
+            const todoList = document.getElementById('todo-list');
+            const li = document.createElement('li');
+            li.className = 'todo-item';
 
-        // Placeholder for generating the project timeline
-        function generateTimeline() {
-            const timeline = document.getElementById('timeline');
-            // Use JavaScript to dynamically generate the project timeline based on project data
+            // Create checkbox for marking the item as completed
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    li.classList.add('completed');
+                } else {
+                    li.classList.remove('completed');
+                }
+            });
+
+            // Create span for the todo text
+            const span = document.createElement('span');
+            span.className = 'todo-text';
+            span.textContent = todoText;
+
+            // Append checkbox and text to the list item
+            li.appendChild(checkbox);
+            li.appendChild(span);
+
+            // Prepend the new item to the top of the list
+            todoList.insertBefore(li, todoList.firstChild);
         }
 
-        generateTimeline();
+        // Load projects on page load
+        loadProjects();
     </script>
 </body>
 </html>

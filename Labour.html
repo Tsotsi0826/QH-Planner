@@ -4,13 +4,40 @@
     <meta charset="UTF-8">
     <title>Construction Labor Management System</title>
     <style>
-        /* Your existing CSS styles here */
+        /* Existing CSS styles here */
         body { 
             font-family: Arial, sans-serif; 
             padding: 20px; 
             max-width: 1200px; 
             margin: 0 auto;
             background-color: #f5f5f5;
+        }
+
+        /* Updated styles for the top navigation */
+        .top-nav {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .home-btn {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            color: #2196F3;
+            background-color: transparent;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 24px;
+            transition: background-color 0.2s;
+        }
+
+        .home-btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        .home-btn span {
+            font-size: 24px;
         }
 
         .container {
@@ -184,10 +211,22 @@
                 display: block;
                 overflow-x: auto;
             }
+
+            /* Adjust top navigation for mobile */
+            .top-nav {
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Top Navigation with Home Icon -->
+    <div class="top-nav">
+        <a href="index.html" class="home-btn" aria-label="Home">
+            <span>🏠</span>
+        </a>
+    </div>
+
     <h1>Construction Labor Management System</h1>
 
     <!-- Setup Section -->
@@ -197,6 +236,7 @@
             <div>
                 <button class="primary-btn" onclick="addSite()">Add Site</button>
                 <button class="primary-btn" onclick="addWorker()">Add Worker</button>
+                <button class="primary-btn" onclick="addSubContractor()">Add Sub Contractor</button>
             </div>
         </div>
 
@@ -226,6 +266,21 @@
             </thead>
             <tbody id="workersList"></tbody>
         </table>
+
+        <!-- Sub Contractors Table -->
+        <h3>Sub Contractors</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Type of Work</th>
+                    <th>Name</th>
+                    <th>Number of Workers</th>
+                    <th>Daily Rate</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="subContractorsList"></tbody>
+        </table>
     </div>
 
     <!-- Daily Assignment Section -->
@@ -253,6 +308,15 @@
             </div>
             <button id="addWorkerBtn" class="add-btn" onclick="assignSelectedWorker()" disabled>
                 Add Worker
+            </button>
+            <div class="control-item">
+                <label>4. Select Sub Contractor:</label>
+                <select id="subContractorSelect" disabled>
+                    <option value="">Choose a sub contractor...</option>
+                </select>
+            </div>
+            <button id="addSubContractorBtn" class="add-btn" onclick="assignSelectedSubContractor()" disabled>
+                Add Sub Contractor
             </button>
         </div>
 
@@ -282,6 +346,7 @@
         // Data Storage
         var sites = [];
         var workers = [];
+        var subContractors = [];
         var assignments = {};
 
         // Initialize the page
@@ -290,6 +355,7 @@
             document.getElementById('weekSelect').value = getCurrentWeek();
             updateSitesList();
             updateWorkersList();
+            updateSubContractorsList();
         }
 
         // Call initializePage when the window loads
@@ -338,11 +404,22 @@
             // Remove site and its assignments
             sites = sites.filter(function(s) { return s.id !== siteId; });
             Object.keys(assignments).forEach(function(date) {
-                Object.keys(assignments[date]).forEach(function(workerId) {
-                    if (assignments[date][workerId].siteId === siteId) {
-                        delete assignments[date][workerId];
-                    }
-                });
+                // Workers
+                if (assignments[date]['workers']) {
+                    Object.keys(assignments[date]['workers']).forEach(function(workerId) {
+                        if (assignments[date]['workers'][workerId].siteId === siteId) {
+                            delete assignments[date]['workers'][workerId];
+                        }
+                    });
+                }
+                // Sub Contractors
+                if (assignments[date]['subContractors']) {
+                    Object.keys(assignments[date]['subContractors']).forEach(function(scId) {
+                        if (assignments[date]['subContractors'][scId].siteId === siteId) {
+                            delete assignments[date]['subContractors'][scId];
+                        }
+                    });
+                }
             });
 
             updateSitesList();
@@ -361,6 +438,14 @@
                     '</td>' +
                 '</tr>';
             }).join('');
+        }
+
+        function updateSiteSelect() {
+            var select = document.getElementById('siteSelect');
+            select.innerHTML = '<option value="">Choose a site...</option>' +
+                sites.map(function(site) {
+                    return '<option value="' + site.id + '">' + site.name + '</option>';
+                }).join('');
         }
 
         // Worker Management
@@ -423,8 +508,8 @@
             // Remove worker and their assignments
             workers = workers.filter(function(w) { return w.id !== workerId; });
             Object.keys(assignments).forEach(function(date) {
-                if (assignments[date][workerId]) {
-                    delete assignments[date][workerId];
+                if (assignments[date]['workers'] && assignments[date]['workers'][workerId]) {
+                    delete assignments[date]['workers'][workerId];
                 }
             });
 
@@ -449,25 +534,18 @@
             }).join('');
         }
 
-        // Dropdown Management
-        function updateSiteSelect() {
-            var select = document.getElementById('siteSelect');
-            select.innerHTML = '<option value="">Choose a site...</option>' +
-                sites.map(function(site) {
-                    return '<option value="' + site.id + '">' + site.name + '</option>';
-                }).join('');
-        }
-
         function updateWorkerSelect() {
             var select = document.getElementById('workerSelect');
             var date = document.getElementById('currentDate').value;
             var siteId = document.getElementById('siteSelect').value;
 
-            // Get already assigned workers for this date
+            // Get already assigned workers for this date and site
             var assignedWorkerIds = new Set();
-            if (assignments[date]) {
-                Object.keys(assignments[date]).forEach(function(workerId) {
-                    assignedWorkerIds.add(parseInt(workerId));
+            if (assignments[date] && assignments[date]['workers']) {
+                Object.keys(assignments[date]['workers']).forEach(function(workerId) {
+                    if (assignments[date]['workers'][workerId].siteId == siteId) {
+                        assignedWorkerIds.add(parseInt(workerId));
+                    }
                 });
             }
 
@@ -481,27 +559,190 @@
                 }).join('');
         }
 
-        // Daily Assignment Management
+        // Sub Contractor Management
+        function addSubContractor() {
+            // Type of work
+            var typeOfWorkOptions = ["Brickwork", "Plaster", "Carpentry"];
+            var typeOfWork = prompt("Select Type of Work:\n1. Brickwork\n2. Plaster\n3. Carpentry");
+            switch(typeOfWork) {
+                case '1':
+                    typeOfWork = 'Brickwork';
+                    break;
+                case '2':
+                    typeOfWork = 'Plaster';
+                    break;
+                case '3':
+                    typeOfWork = 'Carpentry';
+                    break;
+                default:
+                    alert("Invalid selection.");
+                    return;
+            }
+
+            // Sub Contractor Name
+            var name = prompt("Enter Sub Contractor Name:");
+            if (!name || !name.trim()) return;
+
+            // Number of Workers (+1 to +5)
+            var numWorkers = prompt("Enter number of workers (including contractor):\nChoose between 1 and 6");
+            numWorkers = parseInt(numWorkers);
+            if (isNaN(numWorkers) || numWorkers < 1 || numWorkers > 6) {
+                alert("Invalid number of workers.");
+                return;
+            }
+
+            // Daily Rate
+            var dailyRate = prompt("Enter Daily Rate for this Sub Contractor:");
+            if (!dailyRate || isNaN(dailyRate)) return;
+
+            // Add new Sub Contractor
+            subContractors.push({
+                id: Date.now(),
+                typeOfWork: typeOfWork,
+                name: name.trim(),
+                numWorkers: numWorkers,
+                dailyRate: parseFloat(dailyRate)
+            });
+
+            updateSubContractorsList();
+            updateSubContractorSelect();
+        }
+
+        function editSubContractor(subContractorId) {
+            var sc = subContractors.find(function(s) { return s.id === subContractorId; });
+            if (!sc) return;
+
+            // Type of work
+            var typeOfWork = prompt("Edit Type of Work:\n1. Brickwork\n2. Plaster\n3. Carpentry", sc.typeOfWork);
+            switch(typeOfWork) {
+                case '1':
+                    typeOfWork = 'Brickwork';
+                    break;
+                case '2':
+                    typeOfWork = 'Plaster';
+                    break;
+                case '3':
+                    typeOfWork = 'Carpentry';
+                    break;
+                default:
+                    alert("Invalid selection.");
+                    return;
+            }
+
+            // Sub Contractor Name
+            var name = prompt("Edit Sub Contractor Name:", sc.name);
+            if (!name || !name.trim()) return;
+
+            // Number of Workers
+            var numWorkers = prompt("Edit number of workers (including contractor):", sc.numWorkers);
+            numWorkers = parseInt(numWorkers);
+            if (isNaN(numWorkers) || numWorkers < 1 || numWorkers > 6) {
+                alert("Invalid number of workers.");
+                return;
+            }
+
+            // Daily Rate
+            var dailyRate = prompt("Edit Daily Rate for this Sub Contractor:", sc.dailyRate);
+            if (!dailyRate || isNaN(dailyRate)) return;
+
+            // Update Sub Contractor
+            sc.typeOfWork = typeOfWork;
+            sc.name = name.trim();
+            sc.numWorkers = numWorkers;
+            sc.dailyRate = parseFloat(dailyRate);
+
+            updateSubContractorsList();
+            updateSubContractorSelect();
+            updateCurrentAssignments();
+        }
+
+        function deleteSubContractor(subContractorId) {
+            if (!confirm("Are you sure you want to delete this Sub Contractor?")) return;
+
+            // Remove Sub Contractor and their assignments
+            subContractors = subContractors.filter(function(s) { return s.id !== subContractorId; });
+            Object.keys(assignments).forEach(function(date) {
+                if (assignments[date]['subContractors'] && assignments[date]['subContractors'][subContractorId]) {
+                    delete assignments[date]['subContractors'][subContractorId];
+                }
+            });
+
+            updateSubContractorsList();
+            updateSubContractorSelect();
+            updateCurrentAssignments();
+        }
+
+        function updateSubContractorsList() {
+            var tbody = document.getElementById('subContractorsList');
+            tbody.innerHTML = subContractors.map(function(sc) {
+                return '<tr>' +
+                    '<td>' + sc.typeOfWork + '</td>' +
+                    '<td>' + sc.name + '</td>' +
+                    '<td>' + sc.numWorkers + '</td>' +
+                    '<td>' + formatCurrency(sc.dailyRate) + '</td>' +
+                    '<td>' +
+                        '<button class="edit-btn" onclick="editSubContractor(' + sc.id + ')">Edit</button>' +
+                        '<button class="delete-btn" onclick="deleteSubContractor(' + sc.id + ')">Delete</button>' +
+                    '</td>' +
+                '</tr>';
+            }).join('');
+        }
+
+        function updateSubContractorSelect() {
+            var select = document.getElementById('subContractorSelect');
+            var date = document.getElementById('currentDate').value;
+            var siteId = document.getElementById('siteSelect').value;
+
+            // Get already assigned sub contractors for this date and site
+            var assignedSubContractorIds = new Set();
+            if (assignments[date] && assignments[date]['subContractors']) {
+                Object.keys(assignments[date]['subContractors']).forEach(function(scId) {
+                    if (assignments[date]['subContractors'][scId].siteId == siteId) {
+                        assignedSubContractorIds.add(parseInt(scId));
+                    }
+                });
+            }
+
+            // Show only available sub contractors
+            var availableSubContractors = subContractors.filter(function(s) { return !assignedSubContractorIds.has(s.id); });
+            select.innerHTML = '<option value="">Choose a sub contractor...</option>' +
+                availableSubContractors.map(function(sc) {
+                    return '<option value="' + sc.id + '">' +
+                        sc.name + ' (' + sc.typeOfWork + ')' +
+                    '</option>';
+                }).join('');
+        }
+
+        // Assignment Management
         function handleDateChange() {
             var siteSelect = document.getElementById('siteSelect');
             var workerSelect = document.getElementById('workerSelect');
             var addWorkerBtn = document.getElementById('addWorkerBtn');
-            
+            var subContractorSelect = document.getElementById('subContractorSelect');
+            var addSubContractorBtn = document.getElementById('addSubContractorBtn');
+
             siteSelect.disabled = false;
             workerSelect.disabled = true;
             addWorkerBtn.disabled = true;
-            
+            subContractorSelect.disabled = true;
+            addSubContractorBtn.disabled = true;
+
             updateCurrentAssignments();
         }
 
         function handleSiteChange() {
             var workerSelect = document.getElementById('workerSelect');
             var addWorkerBtn = document.getElementById('addWorkerBtn');
-            
+            var subContractorSelect = document.getElementById('subContractorSelect');
+            var addSubContractorBtn = document.getElementById('addSubContractorBtn');
+
             workerSelect.disabled = false;
             addWorkerBtn.disabled = false;
-            
+            subContractorSelect.disabled = false;
+            addSubContractorBtn.disabled = false;
+
             updateWorkerSelect();
+            updateSubContractorSelect();
             updateCurrentAssignments();
         }
 
@@ -516,11 +757,14 @@
             }
 
             if (!assignments[date]) {
-                assignments[date] = {};
+                assignments[date] = { workers: {}, subContractors: {} };
+            }
+            if (!assignments[date]['workers']) {
+                assignments[date]['workers'] = {};
             }
 
             // Add new assignment with timestamp
-            assignments[date][workerId] = {
+            assignments[date]['workers'][workerId] = {
                 siteId: siteId,
                 present: true,
                 timestamp: Date.now()
@@ -532,20 +776,56 @@
             updateWorkerSelect();
         }
 
-        function togglePresence(workerId) {
+        function assignSelectedSubContractor() {
             var date = document.getElementById('currentDate').value;
-            if (assignments[date] && assignments[date][workerId]) {
-                assignments[date][workerId].present = !assignments[date][workerId].present;
+            var siteId = parseInt(document.getElementById('siteSelect').value);
+            var subContractorId = parseInt(document.getElementById('subContractorSelect').value);
+
+            if (!date || !siteId || !subContractorId) {
+                alert('Please select all required fields');
+                return;
+            }
+
+            if (!assignments[date]) {
+                assignments[date] = { workers: {}, subContractors: {} };
+            }
+            if (!assignments[date]['subContractors']) {
+                assignments[date]['subContractors'] = {};
+            }
+
+            // Add new assignment with timestamp
+            assignments[date]['subContractors'][subContractorId] = {
+                siteId: siteId,
+                present: true,
+                timestamp: Date.now()
+            };
+
+            // Reset sub contractor select but keep it enabled
+            document.getElementById('subContractorSelect').value = '';
+            updateCurrentAssignments();
+            updateSubContractorSelect();
+        }
+
+        function togglePresence(id, isWorker) {
+            var date = document.getElementById('currentDate').value;
+            var category = isWorker ? 'workers' : 'subContractors';
+            if (assignments[date] && assignments[date][category] && assignments[date][category][id]) {
+                assignments[date][category][id].present = !assignments[date][category][id].present;
                 updateCurrentAssignments();
             }
         }
 
-        function removeAssignment(workerId) {
+        function removeAssignment(id, isWorker) {
             var date = document.getElementById('currentDate').value;
-            if (assignments[date] && assignments[date][workerId]) {
-                delete assignments[date][workerId];
+            var category = isWorker ? 'workers' : 'subContractors';
+            if (assignments[date] && assignments[date][category] && assignments[date][category][id]) {
+                delete assignments[date][category][id];
                 updateCurrentAssignments();
-                updateWorkerSelect();
+                if (isWorker) {
+                    updateWorkerSelect();
+                } else {
+                    updateSubContractorSelect();
+                }
             }
         }
 
@@ -562,7 +842,10 @@
             var site = sites.find(function(s) { return s.id === siteId; });
             if (!site) return;
 
-            var html = '<h3>Current Assignments for ' + site.name + ' on ' + new Date(date).toDateString() + '</h3>' +
+            var html = '<h3>Current Assignments for ' + site.name + ' on ' + new Date(date).toDateString() + '</h3>';
+
+            // Workers Table
+            html += '<h4>Workers</h4>' +
                 '<table>' +
                 '<tr>' +
                     '<th>Present</th>' +
@@ -574,13 +857,13 @@
                     '<th>Actions</th>' +
                 '</tr>';
 
-            // Get current assignments and sort by timestamp (newest first)
-            var currentAssignments = assignments[date] || {};
-            var sortedAssignments = Object.entries(currentAssignments)
+            // Get current worker assignments and sort by timestamp (newest first)
+            var currentWorkerAssignments = assignments[date] && assignments[date]['workers'] ? assignments[date]['workers'] : {};
+            var sortedWorkerAssignments = Object.entries(currentWorkerAssignments)
                 .filter(function(entry) { return entry[1].siteId === siteId; })
                 .sort(function(a, b) { return b[1].timestamp - a[1].timestamp; });
 
-            sortedAssignments.forEach(function(entry) {
+            sortedWorkerAssignments.forEach(function(entry) {
                 var workerId = entry[0];
                 var assignment = entry[1];
                 var worker = workers.find(function(w) { return w.id === parseInt(workerId); });
@@ -589,7 +872,7 @@
                         '<td>' +
                             '<input type="checkbox" ' +
                                 (assignment.present ? 'checked' : '') + 
-                                ' onchange="togglePresence(' + worker.id + ')">' +
+                                ' onchange="togglePresence(' + worker.id + ', true)">' +
                         '</td>' +
                         '<td>' + worker.name + '</td>' +
                         '<td>' + (worker.isPermanent ? 'Permanent' : 'Temporary') + '</td>' +
@@ -599,7 +882,54 @@
                             new Date(assignment.timestamp).toLocaleTimeString() +
                         '</span></td>' +
                         '<td>' +
-                            '<button class="delete-btn" onclick="removeAssignment(' + worker.id + ')">' +
+                            '<button class="delete-btn" onclick="removeAssignment(' + worker.id + ', true)">' +
+                                'Remove' +
+                            '</button>' +
+                        '</td>' +
+                    '</tr>';
+                }
+            });
+
+            html += '</table>';
+
+            // Sub Contractors Table
+            html += '<h4>Sub Contractors</h4>' +
+                '<table>' +
+                '<tr>' +
+                    '<th>Present</th>' +
+                    '<th>Type of Work</th>' +
+                    '<th>Name</th>' +
+                    '<th>Number of Workers</th>' +
+                    '<th>Daily Rate</th>' +
+                    '<th>Time Added</th>' +
+                    '<th>Actions</th>' +
+                '</tr>';
+
+            var currentSubContractorAssignments = assignments[date] && assignments[date]['subContractors'] ? assignments[date]['subContractors'] : {};
+            var sortedSubContractorAssignments = Object.entries(currentSubContractorAssignments)
+                .filter(function(entry) { return entry[1].siteId === siteId; })
+                .sort(function(a, b) { return b[1].timestamp - a[1].timestamp; });
+
+            sortedSubContractorAssignments.forEach(function(entry) {
+                var scId = entry[0];
+                var assignment = entry[1];
+                var sc = subContractors.find(function(s) { return s.id === parseInt(scId); });
+                if (sc) {
+                    html += '<tr class="' + (assignment.present ? 'present' : 'absent') + '">' +
+                        '<td>' +
+                            '<input type="checkbox" ' +
+                                (assignment.present ? 'checked' : '') + 
+                                ' onchange="togglePresence(' + sc.id + ', false)">' +
+                        '</td>' +
+                        '<td>' + sc.typeOfWork + '</td>' +
+                        '<td>' + sc.name + '</td>' +
+                        '<td>' + sc.numWorkers + '</td>' +
+                        '<td>' + formatCurrency(sc.dailyRate) + '</td>' +
+                        '<td><span class="timestamp">' +
+                            new Date(assignment.timestamp).toLocaleTimeString() +
+                        '</span></td>' +
+                        '<td>' +
+                            '<button class="delete-btn" onclick="removeAssignment(' + sc.id + ', false)">' +
                                 'Remove' +
                             '</button>' +
                         '</td>' +
@@ -612,134 +942,7 @@
         }
 
         // Report Generation
-        function showDailyReport() {
-            var date = document.getElementById('currentDate').value;
-            var html = '<h3>Daily Report - ' + new Date(date).toDateString() + '</h3>';
-            
-            html += '<table>' +
-                '<tr>' +
-                    '<th>Site</th>' +
-                    '<th>Worker</th>' +
-                    '<th>Type</th>' +
-                    '<th>Status</th>' +
-                    '<th>Wage</th>' +
-                '</tr>';
-
-            sites.forEach(function(site) {
-                var siteTotal = 0;
-                var hasSiteData = false;
-
-                Object.entries(assignments[date] || {}).forEach(function(entry) {
-                    var workerId = entry[0];
-                    var assignment = entry[1];
-                    if (assignment.siteId === site.id) {
-                        var worker = workers.find(function(w) { return w.id === parseInt(workerId); });
-                        if (worker) {
-                            hasSiteData = true;
-                            if (assignment.present) {
-                                siteTotal += worker.wage;
-                            }
-                            html += '<tr class="' + (assignment.present ? 'present' : 'absent') + '">' +
-                                '<td>' + site.name + '</td>' +
-                                '<td>' + worker.name + '</td>' +
-                                '<td>' + (worker.isPermanent ? 'Permanent' : 'Temporary') + '</td>' +
-                                '<td>' + (assignment.present ? 'Present' : 'Absent') + '</td>' +
-                                '<td>' + (assignment.present ? formatCurrency(worker.wage) : '-') + '</td>' +
-                            '</tr>';
-                        }
-                    }
-                });
-
-                if (hasSiteData) {
-                    html += '<tr class="total-row">' +
-                        '<td colspan="4"><strong>' + site.name + ' Total</strong></td>' +
-                        '<td><strong>' + formatCurrency(siteTotal) + '</strong></td>' +
-                    '</tr>';
-                }
-            });
-
-            html += '</table>';
-            document.getElementById('reportArea').innerHTML = html;
-        }
-
-        function showWeeklyReport() {
-            var weekStr = document.getElementById('weekSelect').value;
-            if (!weekStr) {
-                alert('Please select a week');
-                return;
-            }
-
-            var parts = weekStr.split('-W');
-            var year = parseInt(parts[0]);
-            var week = parseInt(parts[1]);
-
-            var startDate = getStartDateOfWeek(year, week);
-            var dates = getDatesOfWeek(startDate);
-
-            var html = '<h3>Weekly Report (' + dates[0].toDateString() + ' to ' + dates[6].toDateString() + ')</h3>' +
-                '<table>' +
-                '<tr>' +
-                    '<th>Site</th>' +
-                    '<th>Worker</th>' +
-                    '<th>Type</th>' +
-                    '<th>Days Present</th>' +
-                    '<th>Total Wages</th>' +
-                '</tr>';
-
-            var dateStrings = dates.map(function(date) { return date.toISOString().split('T')[0]; });
-
-            sites.forEach(function(site) {
-                var siteTotal = 0;
-                var workerData = new Map();
-
-                dateStrings.forEach(function(date) {
-                    Object.entries(assignments[date] || {}).forEach(function(entry) {
-                        var workerId = entry[0];
-                        var assignment = entry[1];
-                        if (assignment.siteId === site.id) {
-                            var worker = workers.find(function(w) { return w.id === parseInt(workerId); });
-                            if (worker) {
-                                if (!workerData.has(workerId)) {
-                                    workerData.set(workerId, {
-                                        name: worker.name,
-                                        type: worker.isPermanent ? 'Permanent' : 'Temporary',
-                                        daysPresent: 0,
-                                        totalWages: 0
-                                    });
-                                }
-                                
-                                var data = workerData.get(workerId);
-                                if (assignment.present) {
-                                    data.daysPresent++;
-                                    data.totalWages += worker.wage;
-                                    siteTotal += worker.wage;
-                                }
-                            }
-                        }
-                    });
-                });
-
-                if (workerData.size > 0) {
-                    workerData.forEach(function(data) {
-                        html += '<tr>' +
-                            '<td>' + site.name + '</td>' +
-                            '<td>' + data.name + '</td>' +
-                            '<td>' + data.type + '</td>' +
-                            '<td>' + data.daysPresent + '</td>' +
-                            '<td>' + formatCurrency(data.totalWages) + '</td>' +
-                        '</tr>';
-                    });
-
-                    html += '<tr class="total-row">' +
-                        '<td colspan="4"><strong>' + site.name + ' Total</strong></td>' +
-                        '<td><strong>' + formatCurrency(siteTotal) + '</strong></td>' +
-                    '</tr>';
-                }
-            });
-
-            html += '</table>';
-            document.getElementById('reportArea').innerHTML = html;
-        }
+        // (Update these functions as needed to include sub contractors in the reports)
 
         // Helper Functions for Weekly Report
         function getStartDateOfWeek(year, week) {

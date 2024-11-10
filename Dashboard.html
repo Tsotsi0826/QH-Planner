@@ -115,6 +115,11 @@
             <div class="tile-icon">🗂️</div>
             <div class="tile-title">Project Planning</div>
         </div>
+        <!-- New Labour tile -->
+        <div class="tile" onclick="showDetails('labour')" aria-label="Labour">
+            <div class="tile-icon">🛠️</div>
+            <div class="tile-title">Labour</div>
+        </div>
     </div>
 
     <script>
@@ -125,9 +130,10 @@
                 'project-info': 'https://tsotsi0826.github.io/QH-Planner/Project%20Info.html',
                 'meetings': 'https://tsotsi0826.github.io/QH-Planner/Meetings.html',
                 'running-projects': 'https://tsotsi0826.github.io/QH-Planner/Running%20Projects.html',
-                'quick-tasks-notes': 'https://tsotsi0826.github.io/QH-Planner/Tasks.html', // Keeps the link for renamed tile
+                'quick-tasks-notes': 'https://tsotsi0826.github.io/QH-Planner/Tasks.html',
                 'sub-contractors': 'https://tsotsi0826.github.io/QH-Planner/Subcontractors.html',
-                'project-planning': 'https://tsotsi0826.github.io/QH-Planner/ProjectPlanning.html' // Updated link for Project Planning
+                'project-planning': 'https://tsotsi0826.github.io/QH-Planner/ProjectPlanning.html',
+                'labour': 'https://tsotsi0826.github.io/QH-Planner/Labour.html' // Added Labour tile
             };
 
             const file = categoryFiles[category];

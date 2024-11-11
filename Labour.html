@@ -3,16 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Construction Labor Management System</title>
-    <!-- Meta tag update -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <!-- Include Firebase SDKs -->
-    <!-- Firebase App (the core Firebase SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
-    <!-- Firebase Database SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-database-compat.js"></script>
     <style>
-        /* CSS Styles */
-
+        /* Existing CSS styles here */
         body { 
             font-family: Arial, sans-serif; 
             padding: 20px; 
@@ -21,7 +13,7 @@
             background-color: #f5f5f5;
         }
 
-        /* Top Navigation */
+        /* Updated styles for the top navigation */
         .top-nav {
             display: flex;
             justify-content: flex-start;
@@ -226,11 +218,14 @@
             }
         }
     </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
     <!-- Top Navigation with Home Icon -->
     <div class="top-nav">
-        <a href="#" class="home-btn" aria-label="Home">
+        <a href="index.html" class="home-btn" aria-label="Home">
             <span>🏠</span>
         </a>
     </div>
@@ -242,9 +237,9 @@
         <div class="section-header">
             <h2>Initial Setup</h2>
             <div>
-                <button onclick="addSite()" class="primary-btn">Add Site</button>
-                <button onclick="addWorker()" class="primary-btn">Add Worker</button>
-                <button onclick="addSubContractor()" class="primary-btn">Add Sub Contractor</button>
+                <button class="primary-btn" onclick="addSite()">Add Site</button>
+                <button class="primary-btn" onclick="addWorker()">Add Worker</button>
+                <button class="primary-btn" onclick="addSubContractor()">Add Sub Contractor</button>
             </div>
         </div>
 
@@ -314,7 +309,7 @@
                     <option value="">Choose a worker...</option>
                 </select>
             </div>
-            <button id="assignWorkerBtn" class="add-btn" onclick="assignSelectedWorker()" disabled>
+            <button id="addWorkerBtn" class="add-btn" onclick="assignSelectedWorker()" disabled>
                 Add Worker
             </button>
             <div class="control-item">
@@ -323,7 +318,7 @@
                     <option value="">Choose a sub contractor...</option>
                 </select>
             </div>
-            <button id="assignSubContractorBtn" class="add-btn" onclick="assignSelectedSubContractor()" disabled>
+            <button id="addSubContractorBtn" class="add-btn" onclick="assignSelectedSubContractor()" disabled>
                 Add Sub Contractor
             </button>
         </div>
@@ -350,9 +345,8 @@
     </div>
 
     <!-- JavaScript Code -->
-    <!-- Place script at the end of the body -->
     <script>
-        // Your Firebase configuration
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyD82WxYqaYASCiTmcBd7nHHZMTsAJSZkIc",
             authDomain: "qh-planner.firebaseapp.com",
@@ -365,8 +359,7 @@
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        // Initialize database
-        const db = firebase.database();
+        const database = firebase.database();
 
         // Data Storage
         var sites = [];
@@ -378,44 +371,13 @@
         function initializePage() {
             document.getElementById('currentDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('weekSelect').value = getCurrentWeek();
-            loadDataFromFirebase();
+            fetchSites();
+            fetchWorkers();
+            fetchSubContractors();
         }
 
         // Call initializePage when the window loads
         window.onload = initializePage;
-
-        // Load Data from Firebase
-        function loadDataFromFirebase() {
-            // Load Sites
-            db.ref('sites').on('value', function(snapshot) {
-                const data = snapshot.val();
-                sites = data ? Object.values(data) : [];
-                updateSitesList();
-                updateSiteSelect();
-            });
-
-            // Load Workers
-            db.ref('workers').on('value', function(snapshot) {
-                const data = snapshot.val();
-                workers = data ? Object.values(data) : [];
-                updateWorkersList();
-                updateWorkerSelect();
-            });
-
-            // Load Sub Contractors
-            db.ref('subContractors').on('value', function(snapshot) {
-                const data = snapshot.val();
-                subContractors = data ? Object.values(data) : [];
-                updateSubContractorsList();
-                updateSubContractorSelect();
-            });
-
-            // Load Assignments
-            db.ref('assignments').on('value', function(snapshot) {
-                assignments = snapshot.val() || {};
-                updateCurrentAssignments();
-            });
-        }
 
         // Helper Functions
         function getCurrentWeek() {
@@ -429,15 +391,30 @@
             return 'R' + parseFloat(amount).toFixed(2);
         }
 
+        // Fetch Sites from Firebase
+        function fetchSites() {
+            database.ref('Sites').on('value', function(snapshot) {
+                sites = [];
+                snapshot.forEach(function(childSnapshot) {
+                    var site = childSnapshot.val();
+                    site.id = childSnapshot.key;
+                    sites.push(site);
+                });
+                updateSitesList();
+                updateSiteSelect();
+            });
+        }
+
         // Site Management
         function addSite() {
-            var name = prompt("Enter site name:");
-            if (name && name.trim()) {
-                var site = {
-                    id: Date.now(),
-                    name: name.trim()
-                };
-                db.ref('sites/' + site.id).set(site);
+            var siteName = prompt("Enter site name:");
+            if (siteName && siteName.trim()) {
+                var newSiteRef = database.ref('Sites').push();
+                newSiteRef.set({
+                    siteName: siteName.trim()
+                })
+                .then(() => alert("Site added successfully"))
+                .catch(error => console.error("Error adding site:", error));
             }
         }
 
@@ -445,51 +422,40 @@
             var site = sites.find(function(s) { return s.id === siteId; });
             if (!site) return;
 
-            var newName = prompt("Edit site name:", site.name);
-            if (newName && newName.trim() && newName !== site.name) {
-                site.name = newName.trim();
-                db.ref('sites/' + site.id).set(site);
+            var newName = prompt("Edit site name:", site.siteName);
+            if (newName && newName.trim() && newName !== site.siteName) {
+                database.ref('Sites/' + siteId).update({
+                    siteName: newName.trim()
+                })
+                .then(() => alert("Site updated successfully"))
+                .catch(error => console.error("Error updating site:", error));
             }
         }
 
         function deleteSite(siteId) {
             if (!confirm("Are you sure you want to delete this site?")) return;
 
-            // Remove site
-            db.ref('sites/' + siteId).remove();
-
-            // Remove associated assignments
-            db.ref('assignments').once('value', function(snapshot) {
-                var assignmentsData = snapshot.val() || {};
-                Object.keys(assignmentsData).forEach(function(date) {
-                    // Workers
-                    if (assignmentsData[date]['workers']) {
-                        Object.keys(assignmentsData[date]['workers']).forEach(function(workerId) {
-                            if (assignmentsData[date]['workers'][workerId].siteId === siteId) {
-                                db.ref('assignments/' + date + '/workers/' + workerId).remove();
-                            }
-                        });
-                    }
-                    // Sub Contractors
-                    if (assignmentsData[date]['subContractors']) {
-                        Object.keys(assignmentsData[date]['subContractors']).forEach(function(scId) {
-                            if (assignmentsData[date]['subContractors'][scId].siteId === siteId) {
-                                db.ref('assignments/' + date + '/subContractors/' + scId).remove();
-                            }
-                        });
-                    }
+            database.ref('Sites/' + siteId).remove()
+            .then(() => {
+                // Also remove related assignments
+                database.ref('Assignments').orderByChild('siteId').equalTo(siteId).once('value', function(snapshot) {
+                    snapshot.forEach(function(childSnapshot) {
+                        childSnapshot.ref.remove();
+                    });
                 });
-            });
+                alert("Site deleted successfully");
+            })
+            .catch(error => console.error("Error deleting site:", error));
         }
 
         function updateSitesList() {
             var tbody = document.getElementById('sitesList');
             tbody.innerHTML = sites.map(function(site) {
                 return '<tr>' +
-                    '<td>' + site.name + '</td>' +
+                    '<td>' + site.siteName + '</td>' +
                     '<td>' +
-                        '<button class="edit-btn" onclick="editSite(' + site.id + ')">Edit</button>' +
-                        '<button class="delete-btn" onclick="deleteSite(' + site.id + ')">Delete</button>' +
+                        '<button class="edit-btn" onclick="editSite(\'' + site.id + '\')">Edit</button>' +
+                        '<button class="delete-btn" onclick="deleteSite(\'' + site.id + '\')">Delete</button>' +
                     '</td>' +
                 '</tr>';
             }).join('');
@@ -499,74 +465,92 @@
             var select = document.getElementById('siteSelect');
             select.innerHTML = '<option value="">Choose a site...</option>' +
                 sites.map(function(site) {
-                    return '<option value="' + site.id + '">' + site.name + '</option>';
+                    return '<option value="' + site.id + '">' + site.siteName + '</option>';
                 }).join('');
+        }
+
+        // Fetch Workers from Firebase
+        function fetchWorkers() {
+            database.ref('Workers').on('value', function(snapshot) {
+                workers = [];
+                snapshot.forEach(function(childSnapshot) {
+                    var worker = childSnapshot.val();
+                    worker.id = childSnapshot.key;
+                    workers.push(worker);
+                });
+                updateWorkersList();
+                updateWorkerSelect();
+            });
         }
 
         // Worker Management
         function addWorker() {
-            // Get worker details
-            var name = prompt("Enter worker name:");
-            if (!name || !name.trim()) return;
+            const workerName = prompt("Enter worker name:");
+            const workerType = prompt("Enter worker type (e.g., Permanent or Temporary):");
+            const contact = prompt("Enter worker contact number:");
+            const dailyWage = prompt("Enter daily wage in Rand (R):");
 
-            var phone = prompt("Enter contact number:");
-            if (!phone || !phone.trim()) return;
+            if (workerName && workerType && contact && dailyWage) {
+                const newWorkerRef = database.ref('Workers').push();
 
-            var isPermanent = confirm("Is this a permanent worker?\nClick OK for Permanent, Cancel for Temporary");
-
-            var wage = prompt("Enter daily wage in Rand (R):");
-            if (!wage || isNaN(wage)) return;
-
-            // Add new worker
-            var worker = {
-                id: Date.now(),
-                name: name.trim(),
-                phone: phone.trim(),
-                isPermanent: isPermanent,
-                wage: parseFloat(wage)
-            };
-            db.ref('workers/' + worker.id).set(worker);
+                newWorkerRef.set({
+                    workerName: workerName.trim(),
+                    workerType: workerType.trim(),
+                    contact: contact.trim(),
+                    dailyWage: parseFloat(dailyWage)
+                })
+                .then(() => alert("Worker added successfully"))
+                .catch(error => {
+                    console.error("Error adding worker:", error);
+                    alert("Failed to add worker. Check console for details.");
+                });
+            } else {
+                alert("Please provide all worker details to proceed.");
+            }
         }
 
         function editWorker(workerId) {
             var worker = workers.find(function(w) { return w.id === workerId; });
             if (!worker) return;
 
-            // Get updated details
-            var name = prompt("Edit worker name:", worker.name);
-            if (!name || !name.trim()) return;
+            const workerName = prompt("Edit worker name:", worker.workerName);
+            const workerType = prompt("Edit worker type (e.g., Permanent or Temporary):", worker.workerType);
+            const contact = prompt("Edit worker contact number:", worker.contact);
+            const dailyWage = prompt("Edit daily wage in Rand (R):", worker.dailyWage);
 
-            var phone = prompt("Edit contact number:", worker.phone);
-            if (!phone || !phone.trim()) return;
-
-            var isPermanent = confirm("Is this a permanent worker?\nClick OK for Permanent, Cancel for Temporary");
-
-            var wage = prompt("Edit daily wage in Rand (R):", worker.wage);
-            if (!wage || isNaN(wage)) return;
-
-            // Update worker
-            worker.name = name.trim();
-            worker.phone = phone.trim();
-            worker.isPermanent = isPermanent;
-            worker.wage = parseFloat(wage);
-
-            db.ref('workers/' + worker.id).set(worker);
+            if (workerName && workerType && contact && dailyWage) {
+                database.ref('Workers/' + workerId).update({
+                    workerName: workerName.trim(),
+                    workerType: workerType.trim(),
+                    contact: contact.trim(),
+                    dailyWage: parseFloat(dailyWage)
+                })
+                .then(() => alert("Worker updated successfully"))
+                .catch(error => {
+                    console.error("Error updating worker:", error);
+                    alert("Failed to update worker. Check console for details.");
+                });
+            } else {
+                alert("Please provide all worker details to proceed.");
+            }
         }
 
         function deleteWorker(workerId) {
             if (!confirm("Are you sure you want to delete this worker?")) return;
 
-            // Remove worker
-            db.ref('workers/' + workerId).remove();
-
-            // Remove associated assignments
-            db.ref('assignments').once('value', function(snapshot) {
-                var assignmentsData = snapshot.val() || {};
-                Object.keys(assignmentsData).forEach(function(date) {
-                    if (assignmentsData[date]['workers'] && assignmentsData[date]['workers'][workerId]) {
-                        db.ref('assignments/' + date + '/workers/' + workerId).remove();
-                    }
+            database.ref('Workers/' + workerId).remove()
+            .then(() => {
+                // Also remove related assignments
+                database.ref('Assignments').orderByChild('workerId').equalTo(workerId).once('value', function(snapshot) {
+                    snapshot.forEach(function(childSnapshot) {
+                        childSnapshot.ref.remove();
+                    });
                 });
+                alert("Worker deleted successfully");
+            })
+            .catch(error => {
+                console.error("Error deleting worker:", error);
+                alert("Failed to delete worker. Check console for details.");
             });
         }
 
@@ -574,13 +558,13 @@
             var tbody = document.getElementById('workersList');
             tbody.innerHTML = workers.map(function(worker) {
                 return '<tr>' +
-                    '<td>' + worker.name + '</td>' +
-                    '<td>' + (worker.isPermanent ? 'Permanent' : 'Temporary') + '</td>' +
-                    '<td>' + worker.phone + '</td>' +
-                    '<td>' + formatCurrency(worker.wage) + '</td>' +
+                    '<td>' + worker.workerName + '</td>' +
+                    '<td>' + worker.workerType + '</td>' +
+                    '<td>' + worker.contact + '</td>' +
+                    '<td>' + formatCurrency(worker.dailyWage) + '</td>' +
                     '<td>' +
-                        '<button class="edit-btn" onclick="editWorker(' + worker.id + ')">Edit</button>' +
-                        '<button class="delete-btn" onclick="deleteWorker(' + worker.id + ')">Delete</button>' +
+                        '<button class="edit-btn" onclick="editWorker(\'' + worker.id + '\')">Edit</button>' +
+                        '<button class="delete-btn" onclick="deleteWorker(\'' + worker.id + '\')">Delete</button>' +
                     '</td>' +
                 '</tr>';
             }).join('');
@@ -591,134 +575,99 @@
             var date = document.getElementById('currentDate').value;
             var siteId = document.getElementById('siteSelect').value;
 
-            // Get already assigned workers for this date and site
-            var assignedWorkerIds = new Set();
-            if (assignments[date] && assignments[date]['workers']) {
-                Object.keys(assignments[date]['workers']).forEach(function(workerId) {
-                    if (assignments[date]['workers'][workerId].siteId == siteId) {
-                        assignedWorkerIds.add(parseInt(workerId));
+            // Fetch assigned workers for this date and site
+            database.ref('Assignments/' + date + '/workers').once('value', function(snapshot) {
+                var assignedWorkerIds = [];
+                snapshot.forEach(function(childSnapshot) {
+                    var assignment = childSnapshot.val();
+                    if (assignment.siteId === siteId) {
+                        assignedWorkerIds.push(childSnapshot.key);
                     }
                 });
-            }
 
-            // Show only available workers
-            var availableWorkers = workers.filter(function(w) { return !assignedWorkerIds.has(w.id); });
-            select.innerHTML = '<option value="">Choose a worker...</option>' +
-                availableWorkers.map(function(worker) {
-                    return '<option value="' + worker.id + '">' +
-                        worker.name + ' (' + (worker.isPermanent ? 'Permanent' : 'Temporary') + ')' +
-                    '</option>';
-                }).join('');
+                var availableWorkers = workers.filter(function(w) { return assignedWorkerIds.indexOf(w.id) === -1; });
+                select.innerHTML = '<option value="">Choose a worker...</option>' +
+                    availableWorkers.map(function(worker) {
+                        return '<option value="' + worker.id + '">' +
+                            worker.workerName + ' (' + worker.workerType + ')' +
+                        '</option>';
+                    }).join('');
+            });
+        }
+
+        // Fetch Sub Contractors from Firebase
+        function fetchSubContractors() {
+            database.ref('Subcontractors').on('value', function(snapshot) {
+                subContractors = [];
+                snapshot.forEach(function(childSnapshot) {
+                    var sc = childSnapshot.val();
+                    sc.id = childSnapshot.key;
+                    subContractors.push(sc);
+                });
+                updateSubContractorsList();
+                updateSubContractorSelect();
+            });
         }
 
         // Sub Contractor Management
         function addSubContractor() {
-            // Type of work
-            var typeOfWorkOptions = ["Brickwork", "Plaster", "Carpentry"];
-            var typeOfWork = prompt("Select Type of Work:\n1. Brickwork\n2. Plaster\n3. Carpentry");
-            switch(typeOfWork) {
-                case '1':
-                    typeOfWork = 'Brickwork';
-                    break;
-                case '2':
-                    typeOfWork = 'Plaster';
-                    break;
-                case '3':
-                    typeOfWork = 'Carpentry';
-                    break;
-                default:
-                    alert("Invalid selection.");
-                    return;
+            const typeOfWork = prompt("Enter type of work (e.g., Brickwork, Plaster, Carpentry):");
+            const contractorName = prompt("Enter subcontractor name:");
+            const numOfWorkers = prompt("Enter number of workers (including contractor):");
+            const dailyRate = prompt("Enter daily rate for subcontractor in Rand (R):");
+
+            if (typeOfWork && contractorName && numOfWorkers && dailyRate) {
+                const newSubcontractorRef = database.ref('Subcontractors').push();
+                newSubcontractorRef.set({
+                    typeOfWork: typeOfWork.trim(),
+                    contractorName: contractorName.trim(),
+                    numOfWorkers: parseInt(numOfWorkers),
+                    dailyRate: parseFloat(dailyRate)
+                })
+                .then(() => alert("Subcontractor added successfully"))
+                .catch(error => console.error("Error adding subcontractor:", error));
+            } else {
+                alert("Please provide all subcontractor details to proceed.");
             }
-
-            // Sub Contractor Name
-            var name = prompt("Enter Sub Contractor Name:");
-            if (!name || !name.trim()) return;
-
-            // Number of Workers (+1 to +5)
-            var numWorkers = prompt("Enter number of workers (including contractor):\nChoose between 1 and 6");
-            numWorkers = parseInt(numWorkers);
-            if (isNaN(numWorkers) || numWorkers < 1 || numWorkers > 6) {
-                alert("Invalid number of workers.");
-                return;
-            }
-
-            // Daily Rate
-            var dailyRate = prompt("Enter Daily Rate for this Sub Contractor:");
-            if (!dailyRate || isNaN(dailyRate)) return;
-
-            // Add new Sub Contractor
-            var subContractor = {
-                id: Date.now(),
-                typeOfWork: typeOfWork,
-                name: name.trim(),
-                numWorkers: numWorkers,
-                dailyRate: parseFloat(dailyRate)
-            };
-            db.ref('subContractors/' + subContractor.id).set(subContractor);
         }
 
         function editSubContractor(subContractorId) {
             var sc = subContractors.find(function(s) { return s.id === subContractorId; });
             if (!sc) return;
 
-            // Type of work
-            var typeOfWork = prompt("Edit Type of Work:\n1. Brickwork\n2. Plaster\n3. Carpentry", sc.typeOfWork);
-            switch(typeOfWork) {
-                case '1':
-                    typeOfWork = 'Brickwork';
-                    break;
-                case '2':
-                    typeOfWork = 'Plaster';
-                    break;
-                case '3':
-                    typeOfWork = 'Carpentry';
-                    break;
-                default:
-                    alert("Invalid selection.");
-                    return;
+            const typeOfWork = prompt("Edit type of work (e.g., Brickwork, Plaster, Carpentry):", sc.typeOfWork);
+            const contractorName = prompt("Edit subcontractor name:", sc.contractorName);
+            const numOfWorkers = prompt("Edit number of workers (including contractor):", sc.numOfWorkers);
+            const dailyRate = prompt("Edit daily rate for subcontractor in Rand (R):", sc.dailyRate);
+
+            if (typeOfWork && contractorName && numOfWorkers && dailyRate) {
+                database.ref('Subcontractors/' + subContractorId).update({
+                    typeOfWork: typeOfWork.trim(),
+                    contractorName: contractorName.trim(),
+                    numOfWorkers: parseInt(numOfWorkers),
+                    dailyRate: parseFloat(dailyRate)
+                })
+                .then(() => alert("Subcontractor updated successfully"))
+                .catch(error => console.error("Error updating subcontractor:", error));
+            } else {
+                alert("Please provide all subcontractor details to proceed.");
             }
-
-            // Sub Contractor Name
-            var name = prompt("Edit Sub Contractor Name:", sc.name);
-            if (!name || !name.trim()) return;
-
-            // Number of Workers
-            var numWorkers = prompt("Edit number of workers (including contractor):", sc.numWorkers);
-            numWorkers = parseInt(numWorkers);
-            if (isNaN(numWorkers) || numWorkers < 1 || numWorkers > 6) {
-                alert("Invalid number of workers.");
-                return;
-            }
-
-            // Daily Rate
-            var dailyRate = prompt("Edit Daily Rate for this Sub Contractor:", sc.dailyRate);
-            if (!dailyRate || isNaN(dailyRate)) return;
-
-            // Update Sub Contractor
-            sc.typeOfWork = typeOfWork;
-            sc.name = name.trim();
-            sc.numWorkers = numWorkers;
-            sc.dailyRate = parseFloat(dailyRate);
-
-            db.ref('subContractors/' + sc.id).set(sc);
         }
 
         function deleteSubContractor(subContractorId) {
-            if (!confirm("Are you sure you want to delete this Sub Contractor?")) return;
+            if (!confirm("Are you sure you want to delete this subcontractor?")) return;
 
-            // Remove Sub Contractor
-            db.ref('subContractors/' + subContractorId).remove();
-
-            // Remove associated assignments
-            db.ref('assignments').once('value', function(snapshot) {
-                var assignmentsData = snapshot.val() || {};
-                Object.keys(assignmentsData).forEach(function(date) {
-                    if (assignmentsData[date]['subContractors'] && assignmentsData[date]['subContractors'][subContractorId]) {
-                        db.ref('assignments/' + date + '/subContractors/' + subContractorId).remove();
-                    }
+            database.ref('Subcontractors/' + subContractorId).remove()
+            .then(() => {
+                // Also remove related assignments
+                database.ref('Assignments').orderByChild('subContractorId').equalTo(subContractorId).once('value', function(snapshot) {
+                    snapshot.forEach(function(childSnapshot) {
+                        childSnapshot.ref.remove();
+                    });
                 });
-            });
+                alert("Subcontractor deleted successfully");
+            })
+            .catch(error => console.error("Error deleting subcontractor:", error));
         }
 
         function updateSubContractorsList() {
@@ -726,12 +675,12 @@
             tbody.innerHTML = subContractors.map(function(sc) {
                 return '<tr>' +
                     '<td>' + sc.typeOfWork + '</td>' +
-                    '<td>' + sc.name + '</td>' +
-                    '<td>' + sc.numWorkers + '</td>' +
+                    '<td>' + sc.contractorName + '</td>' +
+                    '<td>' + sc.numOfWorkers + '</td>' +
                     '<td>' + formatCurrency(sc.dailyRate) + '</td>' +
                     '<td>' +
-                        '<button class="edit-btn" onclick="editSubContractor(' + sc.id + ')">Edit</button>' +
-                        '<button class="delete-btn" onclick="deleteSubContractor(' + sc.id + ')">Delete</button>' +
+                        '<button class="edit-btn" onclick="editSubContractor(\'' + sc.id + '\')">Edit</button>' +
+                        '<button class="delete-btn" onclick="deleteSubContractor(\'' + sc.id + '\')">Delete</button>' +
                     '</td>' +
                 '</tr>';
             }).join('');
@@ -742,53 +691,53 @@
             var date = document.getElementById('currentDate').value;
             var siteId = document.getElementById('siteSelect').value;
 
-            // Get already assigned sub contractors for this date and site
-            var assignedSubContractorIds = new Set();
-            if (assignments[date] && assignments[date]['subContractors']) {
-                Object.keys(assignments[date]['subContractors']).forEach(function(scId) {
-                    if (assignments[date]['subContractors'][scId].siteId == siteId) {
-                        assignedSubContractorIds.add(parseInt(scId));
+            // Fetch assigned subcontractors for this date and site
+            database.ref('Assignments/' + date + '/subContractors').once('value', function(snapshot) {
+                var assignedSubContractorIds = [];
+                snapshot.forEach(function(childSnapshot) {
+                    var assignment = childSnapshot.val();
+                    if (assignment.siteId === siteId) {
+                        assignedSubContractorIds.push(childSnapshot.key);
                     }
                 });
-            }
 
-            // Show only available sub contractors
-            var availableSubContractors = subContractors.filter(function(s) { return !assignedSubContractorIds.has(s.id); });
-            select.innerHTML = '<option value="">Choose a sub contractor...</option>' +
-                availableSubContractors.map(function(sc) {
-                    return '<option value="' + sc.id + '">' +
-                        sc.name + ' (' + sc.typeOfWork + ')' +
-                    '</option>';
-                }).join('');
+                var availableSubContractors = subContractors.filter(function(s) { return assignedSubContractorIds.indexOf(s.id) === -1; });
+                select.innerHTML = '<option value="">Choose a sub contractor...</option>' +
+                    availableSubContractors.map(function(sc) {
+                        return '<option value="' + sc.id + '">' +
+                            sc.contractorName + ' (' + sc.typeOfWork + ')' +
+                        '</option>';
+                    }).join('');
+            });
         }
 
         // Assignment Management
         function handleDateChange() {
             var siteSelect = document.getElementById('siteSelect');
             var workerSelect = document.getElementById('workerSelect');
-            var assignWorkerBtn = document.getElementById('assignWorkerBtn');
+            var addWorkerBtn = document.getElementById('addWorkerBtn');
             var subContractorSelect = document.getElementById('subContractorSelect');
-            var assignSubContractorBtn = document.getElementById('assignSubContractorBtn');
+            var addSubContractorBtn = document.getElementById('addSubContractorBtn');
 
             siteSelect.disabled = false;
             workerSelect.disabled = true;
-            assignWorkerBtn.disabled = true;
+            addWorkerBtn.disabled = true;
             subContractorSelect.disabled = true;
-            assignSubContractorBtn.disabled = true;
+            addSubContractorBtn.disabled = true;
 
             updateCurrentAssignments();
         }
 
         function handleSiteChange() {
             var workerSelect = document.getElementById('workerSelect');
-            var assignWorkerBtn = document.getElementById('assignWorkerBtn');
+            var addWorkerBtn = document.getElementById('addWorkerBtn');
             var subContractorSelect = document.getElementById('subContractorSelect');
-            var assignSubContractorBtn = document.getElementById('assignSubContractorBtn');
+            var addSubContractorBtn = document.getElementById('addSubContractorBtn');
 
             workerSelect.disabled = false;
-            assignWorkerBtn.disabled = false;
+            addWorkerBtn.disabled = false;
             subContractorSelect.disabled = false;
-            assignSubContractorBtn.disabled = false;
+            addSubContractorBtn.disabled = false;
 
             updateWorkerSelect();
             updateSubContractorSelect();
@@ -797,83 +746,81 @@
 
         function assignSelectedWorker() {
             var date = document.getElementById('currentDate').value;
-            var siteId = parseInt(document.getElementById('siteSelect').value);
-            var workerId = parseInt(document.getElementById('workerSelect').value);
+            var siteId = document.getElementById('siteSelect').value;
+            var workerId = document.getElementById('workerSelect').value;
 
             if (!date || !siteId || !workerId) {
                 alert('Please select all required fields');
                 return;
             }
 
-            // Add new assignment with timestamp
-            var assignment = {
+            var assignmentRef = database.ref('Assignments/' + date + '/workers/' + workerId);
+            assignmentRef.set({
                 siteId: siteId,
                 present: true,
                 timestamp: Date.now()
-            };
-            db.ref('assignments/' + date + '/workers/' + workerId).set(assignment);
-
-            // Reset worker select but keep it enabled
-            document.getElementById('workerSelect').value = '';
-            updateCurrentAssignments();
-            updateWorkerSelect();
+            })
+            .then(() => {
+                document.getElementById('workerSelect').value = '';
+                updateCurrentAssignments();
+                updateWorkerSelect();
+            })
+            .catch(error => console.error("Error assigning worker:", error));
         }
 
         function assignSelectedSubContractor() {
             var date = document.getElementById('currentDate').value;
-            var siteId = parseInt(document.getElementById('siteSelect').value);
-            var subContractorId = parseInt(document.getElementById('subContractorSelect').value);
+            var siteId = document.getElementById('siteSelect').value;
+            var subContractorId = document.getElementById('subContractorSelect').value;
 
             if (!date || !siteId || !subContractorId) {
                 alert('Please select all required fields');
                 return;
             }
 
-            // Add new assignment with timestamp
-            var assignment = {
+            var assignmentRef = database.ref('Assignments/' + date + '/subContractors/' + subContractorId);
+            assignmentRef.set({
                 siteId: siteId,
                 present: true,
                 timestamp: Date.now()
-            };
-            db.ref('assignments/' + date + '/subContractors/' + subContractorId).set(assignment);
-
-            // Reset sub contractor select but keep it enabled
-            document.getElementById('subContractorSelect').value = '';
-            updateCurrentAssignments();
-            updateSubContractorSelect();
+            })
+            .then(() => {
+                document.getElementById('subContractorSelect').value = '';
+                updateCurrentAssignments();
+                updateSubContractorSelect();
+            })
+            .catch(error => console.error("Error assigning subcontractor:", error));
         }
 
         function togglePresence(id, isWorker) {
             var date = document.getElementById('currentDate').value;
             var category = isWorker ? 'workers' : 'subContractors';
-            var assignmentRef = db.ref('assignments/' + date + '/' + category + '/' + id);
-
-            assignmentRef.once('value', function(snapshot) {
-                var assignment = snapshot.val();
-                if (assignment) {
-                    assignment.present = !assignment.present;
-                    assignmentRef.update({ present: assignment.present });
-                    updateCurrentAssignments();
-                }
+            var ref = database.ref('Assignments/' + date + '/' + category + '/' + id + '/present');
+            ref.once('value', function(snapshot) {
+                ref.set(!snapshot.val())
+                .then(() => updateCurrentAssignments())
+                .catch(error => console.error("Error updating presence:", error));
             });
         }
 
         function removeAssignment(id, isWorker) {
             var date = document.getElementById('currentDate').value;
             var category = isWorker ? 'workers' : 'subContractors';
-            db.ref('assignments/' + date + '/' + category + '/' + id).remove();
-
-            if (isWorker) {
-                updateWorkerSelect();
-            } else {
-                updateSubContractorSelect();
-            }
-            updateCurrentAssignments();
+            database.ref('Assignments/' + date + '/' + category + '/' + id).remove()
+            .then(() => {
+                updateCurrentAssignments();
+                if (isWorker) {
+                    updateWorkerSelect();
+                } else {
+                    updateSubContractorSelect();
+                }
+            })
+            .catch(error => console.error("Error removing assignment:", error));
         }
 
         function updateCurrentAssignments() {
             var date = document.getElementById('currentDate').value;
-            var siteId = parseInt(document.getElementById('siteSelect').value);
+            var siteId = document.getElementById('siteSelect').value;
             var div = document.getElementById('currentAssignments');
 
             if (!date || !siteId) {
@@ -884,7 +831,7 @@
             var site = sites.find(function(s) { return s.id === siteId; });
             if (!site) return;
 
-            var html = '<h3>Current Assignments for ' + site.name + ' on ' + new Date(date).toDateString() + '</h3>';
+            var html = '<h3>Current Assignments for ' + site.siteName + ' on ' + new Date(date).toDateString() + '</h3>';
 
             // Workers Table
             html += '<h4>Workers</h4>' +
@@ -899,99 +846,111 @@
                     '<th>Actions</th>' +
                 '</tr>';
 
-            // Get current worker assignments
-            var currentWorkerAssignments = assignments[date] && assignments[date]['workers'] ? assignments[date]['workers'] : {};
-
-            Object.entries(currentWorkerAssignments).forEach(function(entry) {
-                var workerId = entry[0];
-                var assignment = entry[1];
-                if (assignment.siteId === siteId) {
-                    var worker = workers.find(function(w) { return w.id === parseInt(workerId); });
-                    if (worker) {
-                        html += '<tr class="' + (assignment.present ? 'present' : 'absent') + '">' +
-                            '<td>' +
-                                '<input type="checkbox" ' +
-                                    (assignment.present ? 'checked' : '') + 
-                                    ' onchange="togglePresence(' + worker.id + ', true)">' +
-                            '</td>' +
-                            '<td>' + worker.name + '</td>' +
-                            '<td>' + (worker.isPermanent ? 'Permanent' : 'Temporary') + '</td>' +
-                            '<td>' + worker.phone + '</td>' +
-                            '<td>' + formatCurrency(worker.wage) + '</td>' +
-                            '<td><span class="timestamp">' +
-                                new Date(assignment.timestamp).toLocaleTimeString() +
-                            '</span></td>' +
-                            '<td>' +
-                                '<button class="delete-btn" onclick="removeAssignment(' + worker.id + ', true)">' +
-                                    'Remove' +
-                                '</button>' +
-                            '</td>' +
-                        '</tr>';
+            database.ref('Assignments/' + date + '/workers').orderByChild('timestamp').once('value', function(snapshot) {
+                snapshot.forEach(function(childSnapshot) {
+                    var assignment = childSnapshot.val();
+                    if (assignment.siteId === siteId) {
+                        var workerId = childSnapshot.key;
+                        var worker = workers.find(function(w) { return w.id === workerId; });
+                        if (worker) {
+                            html += '<tr class="' + (assignment.present ? 'present' : 'absent') + '">' +
+                                '<td>' +
+                                    '<input type="checkbox" ' +
+                                        (assignment.present ? 'checked' : '') + 
+                                        ' onchange="togglePresence(\'' + worker.id + '\', true)">' +
+                                '</td>' +
+                                '<td>' + worker.workerName + '</td>' +
+                                '<td>' + worker.workerType + '</td>' +
+                                '<td>' + worker.contact + '</td>' +
+                                '<td>' + formatCurrency(worker.dailyWage) + '</td>' +
+                                '<td><span class="timestamp">' +
+                                    new Date(assignment.timestamp).toLocaleTimeString() +
+                                '</span></td>' +
+                                '<td>' +
+                                    '<button class="delete-btn" onclick="removeAssignment(\'' + worker.id + '\', true)">' +
+                                        'Remove' +
+                                    '</button>' +
+                                '</td>' +
+                            '</tr>';
+                        }
                     }
-                }
+                });
+
+                html += '</table>';
+
+                // Sub Contractors Table
+                html += '<h4>Sub Contractors</h4>' +
+                    '<table>' +
+                    '<tr>' +
+                        '<th>Present</th>' +
+                        '<th>Type of Work</th>' +
+                        '<th>Name</th>' +
+                        '<th>Number of Workers</th>' +
+                        '<th>Daily Rate</th>' +
+                        '<th>Time Added</th>' +
+                        '<th>Actions</th>' +
+                    '</tr>';
+
+                database.ref('Assignments/' + date + '/subContractors').orderByChild('timestamp').once('value', function(snapshot) {
+                    snapshot.forEach(function(childSnapshot) {
+                        var assignment = childSnapshot.val();
+                        if (assignment.siteId === siteId) {
+                            var scId = childSnapshot.key;
+                            var sc = subContractors.find(function(s) { return s.id === scId; });
+                            if (sc) {
+                                html += '<tr class="' + (assignment.present ? 'present' : 'absent') + '">' +
+                                    '<td>' +
+                                        '<input type="checkbox" ' +
+                                            (assignment.present ? 'checked' : '') + 
+                                            ' onchange="togglePresence(\'' + sc.id + '\', false)">' +
+                                    '</td>' +
+                                    '<td>' + sc.typeOfWork + '</td>' +
+                                    '<td>' + sc.contractorName + '</td>' +
+                                    '<td>' + sc.numOfWorkers + '</td>' +
+                                    '<td>' + formatCurrency(sc.dailyRate) + '</td>' +
+                                    '<td><span class="timestamp">' +
+                                        new Date(assignment.timestamp).toLocaleTimeString() +
+                                    '</span></td>' +
+                                    '<td>' +
+                                        '<button class="delete-btn" onclick="removeAssignment(\'' + sc.id + '\', false)">' +
+                                            'Remove' +
+                                        '</button>' +
+                                    '</td>' +
+                                '</tr>';
+                            }
+                        }
+                    });
+
+                    html += '</table>';
+                    div.innerHTML = html;
+                });
             });
-
-            html += '</table>';
-
-            // Sub Contractors Table
-            html += '<h4>Sub Contractors</h4>' +
-                '<table>' +
-                '<tr>' +
-                    '<th>Present</th>' +
-                    '<th>Type of Work</th>' +
-                    '<th>Name</th>' +
-                    '<th>Number of Workers</th>' +
-                    '<th>Daily Rate</th>' +
-                    '<th>Time Added</th>' +
-                    '<th>Actions</th>' +
-                '</tr>';
-
-            var currentSubContractorAssignments = assignments[date] && assignments[date]['subContractors'] ? assignments[date]['subContractors'] : {};
-
-            Object.entries(currentSubContractorAssignments).forEach(function(entry) {
-                var scId = entry[0];
-                var assignment = entry[1];
-                if (assignment.siteId === siteId) {
-                    var sc = subContractors.find(function(s) { return s.id === parseInt(scId); });
-                    if (sc) {
-                        html += '<tr class="' + (assignment.present ? 'present' : 'absent') + '">' +
-                            '<td>' +
-                                '<input type="checkbox" ' +
-                                    (assignment.present ? 'checked' : '') + 
-                                    ' onchange="togglePresence(' + sc.id + ', false)">' +
-                            '</td>' +
-                            '<td>' + sc.typeOfWork + '</td>' +
-                            '<td>' + sc.name + '</td>' +
-                            '<td>' + sc.numWorkers + '</td>' +
-                            '<td>' + formatCurrency(sc.dailyRate) + '</td>' +
-                            '<td><span class="timestamp">' +
-                                new Date(assignment.timestamp).toLocaleTimeString() +
-                            '</span></td>' +
-                            '<td>' +
-                                '<button class="delete-btn" onclick="removeAssignment(' + sc.id + ', false)">' +
-                                    'Remove' +
-                                '</button>' +
-                            '</td>' +
-                        '</tr>';
-                    }
-                }
-            });
-
-            html += '</table>';
-            div.innerHTML = html;
         }
 
         // Report Generation
-        // Placeholder functions for report generation
-        function showDailyReport() {
-            alert("Daily Report functionality is under development.");
+        // (You can implement report generation functions here, integrating with Firebase as needed)
+
+        // Helper Functions for Weekly Report
+        function getStartDateOfWeek(year, week) {
+            var simple = new Date(year, 0, 1 + (week - 1) * 7);
+            var dow = simple.getDay();
+            var ISOweekStart = simple;
+            if (dow <= 4)
+                ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+            else
+                ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+            return ISOweekStart;
         }
 
-        function showWeeklyReport() {
-            alert("Weekly Report functionality is under development.");
+        function getDatesOfWeek(startDate) {
+            var dates = [];
+            for (var i = 0; i < 7; i++) {
+                var date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                dates.push(date);
+            }
+            return dates;
         }
-
-        // You can implement the report generation functions as needed
     </script>
 </body>
 </html>

@@ -277,8 +277,6 @@
                 <tr>
                     <th>Type of Work</th>
                     <th>Name</th>
-                    <th>Number of Workers</th>
-                    <th>Daily Rate</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -334,6 +332,12 @@
 
         <div class="controls-group">
             <div class="control-item">
+                <label>Select Site:</label>
+                <select id="reportSiteSelect">
+                    <option value="">All Sites</option>
+                </select>
+            </div>
+            <div class="control-item">
                 <label>Select Week:</label>
                 <input type="week" id="weekSelect">
             </div>
@@ -365,15 +369,18 @@
         var sites = [];
         var workers = [];
         var subContractors = [];
-        var assignments = {};
 
         // Initialize the page
         function initializePage() {
-            document.getElementById('currentDate').value = new Date().toISOString().split('T')[0];
+            // Set the date input to today's date in the local time zone
+            var today = new Date();
+            today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+            document.getElementById('currentDate').value = today.toISOString().split('T')[0];
             document.getElementById('weekSelect').value = getCurrentWeek();
             fetchSites();
             fetchWorkers();
             fetchSubContractors();
+            handleDateChange(); // Ensure the page initializes correctly
         }
 
         // Call initializePage when the window loads
@@ -402,7 +409,17 @@
                 });
                 updateSitesList();
                 updateSiteSelect();
+                updateReportSiteSelect(); // Update report site select
             });
+        }
+
+        // Update Report Site Select
+        function updateReportSiteSelect() {
+            var select = document.getElementById('reportSiteSelect');
+            select.innerHTML = '<option value="">All Sites</option>' +
+                sites.map(function(site) {
+                    return '<option value="' + site.id + '">' + site.siteName + '</option>';
+                }).join('');
         }
 
         // Site Management
@@ -438,9 +455,23 @@
             database.ref('Sites/' + siteId).remove()
             .then(() => {
                 // Also remove related assignments
-                database.ref('Assignments').orderByChild('siteId').equalTo(siteId).once('value', function(snapshot) {
-                    snapshot.forEach(function(childSnapshot) {
-                        childSnapshot.ref.remove();
+                database.ref('Assignments').once('value', function(snapshot) {
+                    snapshot.forEach(function(dateSnapshot) {
+                        var dateKey = dateSnapshot.key;
+                        database.ref('Assignments/' + dateKey + '/workers').once('value', function(workerSnapshot) {
+                            workerSnapshot.forEach(function(childSnapshot) {
+                                if (childSnapshot.val().siteId === siteId) {
+                                    database.ref('Assignments/' + dateKey + '/workers/' + childSnapshot.key).remove();
+                                }
+                            });
+                        });
+                        database.ref('Assignments/' + dateKey + '/subContractors').once('value', function(scSnapshot) {
+                            scSnapshot.forEach(function(childSnapshot) {
+                                if (childSnapshot.val().siteId === siteId) {
+                                    database.ref('Assignments/' + dateKey + '/subContractors/' + childSnapshot.key).remove();
+                                }
+                            });
+                        });
                     });
                 });
                 alert("Site deleted successfully");
@@ -541,9 +572,11 @@
             database.ref('Workers/' + workerId).remove()
             .then(() => {
                 // Also remove related assignments
-                database.ref('Assignments').orderByChild('workerId').equalTo(workerId).once('value', function(snapshot) {
-                    snapshot.forEach(function(childSnapshot) {
-                        childSnapshot.ref.remove();
+                database.ref('Assignments').once('value', function(snapshot) {
+                    snapshot.forEach(function(dateSnapshot) {
+                        var dateKey = dateSnapshot.key;
+                        var workersRef = database.ref('Assignments/' + dateKey + '/workers/' + workerId);
+                        workersRef.remove();
                     });
                 });
                 alert("Worker deleted successfully");
@@ -574,6 +607,11 @@
             var select = document.getElementById('workerSelect');
             var date = document.getElementById('currentDate').value;
             var siteId = document.getElementById('siteSelect').value;
+
+            if (!date || !siteId) {
+                select.innerHTML = '<option value="">Choose a worker...</option>';
+                return;
+            }
 
             // Fetch assigned workers for this date and site
             database.ref('Assignments/' + date + '/workers').once('value', function(snapshot) {
@@ -613,16 +651,12 @@
         function addSubContractor() {
             const typeOfWork = prompt("Enter type of work (e.g., Brickwork, Plaster, Carpentry):");
             const contractorName = prompt("Enter subcontractor name:");
-            const numOfWorkers = prompt("Enter number of workers (including contractor):");
-            const dailyRate = prompt("Enter daily rate for subcontractor in Rand (R):");
 
-            if (typeOfWork && contractorName && numOfWorkers && dailyRate) {
+            if (typeOfWork && contractorName) {
                 const newSubcontractorRef = database.ref('Subcontractors').push();
                 newSubcontractorRef.set({
                     typeOfWork: typeOfWork.trim(),
-                    contractorName: contractorName.trim(),
-                    numOfWorkers: parseInt(numOfWorkers),
-                    dailyRate: parseFloat(dailyRate)
+                    contractorName: contractorName.trim()
                 })
                 .then(() => alert("Subcontractor added successfully"))
                 .catch(error => console.error("Error adding subcontractor:", error));
@@ -637,15 +671,11 @@
 
             const typeOfWork = prompt("Edit type of work (e.g., Brickwork, Plaster, Carpentry):", sc.typeOfWork);
             const contractorName = prompt("Edit subcontractor name:", sc.contractorName);
-            const numOfWorkers = prompt("Edit number of workers (including contractor):", sc.numOfWorkers);
-            const dailyRate = prompt("Edit daily rate for subcontractor in Rand (R):", sc.dailyRate);
 
-            if (typeOfWork && contractorName && numOfWorkers && dailyRate) {
+            if (typeOfWork && contractorName) {
                 database.ref('Subcontractors/' + subContractorId).update({
                     typeOfWork: typeOfWork.trim(),
-                    contractorName: contractorName.trim(),
-                    numOfWorkers: parseInt(numOfWorkers),
-                    dailyRate: parseFloat(dailyRate)
+                    contractorName: contractorName.trim()
                 })
                 .then(() => alert("Subcontractor updated successfully"))
                 .catch(error => console.error("Error updating subcontractor:", error));
@@ -660,9 +690,11 @@
             database.ref('Subcontractors/' + subContractorId).remove()
             .then(() => {
                 // Also remove related assignments
-                database.ref('Assignments').orderByChild('subContractorId').equalTo(subContractorId).once('value', function(snapshot) {
-                    snapshot.forEach(function(childSnapshot) {
-                        childSnapshot.ref.remove();
+                database.ref('Assignments').once('value', function(snapshot) {
+                    snapshot.forEach(function(dateSnapshot) {
+                        var dateKey = dateSnapshot.key;
+                        var scRef = database.ref('Assignments/' + dateKey + '/subContractors/' + subContractorId);
+                        scRef.remove();
                     });
                 });
                 alert("Subcontractor deleted successfully");
@@ -676,8 +708,6 @@
                 return '<tr>' +
                     '<td>' + sc.typeOfWork + '</td>' +
                     '<td>' + sc.contractorName + '</td>' +
-                    '<td>' + sc.numOfWorkers + '</td>' +
-                    '<td>' + formatCurrency(sc.dailyRate) + '</td>' +
                     '<td>' +
                         '<button class="edit-btn" onclick="editSubContractor(\'' + sc.id + '\')">Edit</button>' +
                         '<button class="delete-btn" onclick="deleteSubContractor(\'' + sc.id + '\')">Delete</button>' +
@@ -690,6 +720,11 @@
             var select = document.getElementById('subContractorSelect');
             var date = document.getElementById('currentDate').value;
             var siteId = document.getElementById('siteSelect').value;
+
+            if (!date || !siteId) {
+                select.innerHTML = '<option value="">Choose a sub contractor...</option>';
+                return;
+            }
 
             // Fetch assigned subcontractors for this date and site
             database.ref('Assignments/' + date + '/subContractors').once('value', function(snapshot) {
@@ -726,6 +761,7 @@
             addSubContractorBtn.disabled = true;
 
             updateCurrentAssignments();
+            updateSiteSelect(); // Ensure the site select is updated
         }
 
         function handleSiteChange() {
@@ -754,11 +790,20 @@
                 return;
             }
 
+            // Prompt for IOU amount
+            var iouAmount = prompt("Enter IOU amount for this worker in Rand (R):", "0");
+            iouAmount = parseFloat(iouAmount);
+            if (isNaN(iouAmount) || iouAmount < 0) {
+                alert("Invalid IOU amount.");
+                return;
+            }
+
             var assignmentRef = database.ref('Assignments/' + date + '/workers/' + workerId);
             assignmentRef.set({
                 siteId: siteId,
                 present: true,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                iou: iouAmount
             })
             .then(() => {
                 document.getElementById('workerSelect').value = '';
@@ -778,10 +823,53 @@
                 return;
             }
 
+            // Prompt for number of Senior Staff and their wage
+            var numSeniorStaff = prompt("Enter number of Senior Staff:");
+            numSeniorStaff = parseInt(numSeniorStaff);
+            if (isNaN(numSeniorStaff) || numSeniorStaff < 0) {
+                alert("Invalid number of Senior Staff.");
+                return;
+            }
+
+            var seniorStaffWage = prompt("Enter wage per Senior Staff in Rand (R):");
+            seniorStaffWage = parseFloat(seniorStaffWage);
+            if (isNaN(seniorStaffWage) || seniorStaffWage < 0) {
+                alert("Invalid Senior Staff wage.");
+                return;
+            }
+
+            // Prompt for number of Labour Staff and their wage
+            var numLabour = prompt("Enter number of Labour Staff:");
+            numLabour = parseInt(numLabour);
+            if (isNaN(numLabour) || numLabour < 0) {
+                alert("Invalid number of Labour Staff.");
+                return;
+            }
+
+            var labourStaffWage = prompt("Enter wage per Labour Staff in Rand (R):");
+            labourStaffWage = parseFloat(labourStaffWage);
+            if (isNaN(labourStaffWage) || labourStaffWage < 0) {
+                alert("Invalid Labour Staff wage.");
+                return;
+            }
+
+            // Prompt for IOU amount
+            var iouAmount = prompt("Enter IOU amount for this subcontractor in Rand (R):", "0");
+            iouAmount = parseFloat(iouAmount);
+            if (isNaN(iouAmount) || iouAmount < 0) {
+                alert("Invalid IOU amount.");
+                return;
+            }
+
             var assignmentRef = database.ref('Assignments/' + date + '/subContractors/' + subContractorId);
             assignmentRef.set({
                 siteId: siteId,
                 present: true,
+                numSeniorStaff: numSeniorStaff,
+                seniorStaffWage: seniorStaffWage,
+                numLabour: numLabour,
+                labourStaffWage: labourStaffWage,
+                iou: iouAmount,
                 timestamp: Date.now()
             })
             .then(() => {
@@ -842,14 +930,17 @@
                     '<th>Type</th>' +
                     '<th>Contact</th>' +
                     '<th>Wage</th>' +
+                    '<th>IOU</th>' +
                     '<th>Time Added</th>' +
                     '<th>Actions</th>' +
                 '</tr>';
 
             database.ref('Assignments/' + date + '/workers').orderByChild('timestamp').once('value', function(snapshot) {
+                var hasWorkers = false;
                 snapshot.forEach(function(childSnapshot) {
                     var assignment = childSnapshot.val();
                     if (assignment.siteId === siteId) {
+                        hasWorkers = true;
                         var workerId = childSnapshot.key;
                         var worker = workers.find(function(w) { return w.id === workerId; });
                         if (worker) {
@@ -863,6 +954,7 @@
                                 '<td>' + worker.workerType + '</td>' +
                                 '<td>' + worker.contact + '</td>' +
                                 '<td>' + formatCurrency(worker.dailyWage) + '</td>' +
+                                '<td>' + formatCurrency(assignment.iou || 0) + '</td>' +
                                 '<td><span class="timestamp">' +
                                     new Date(assignment.timestamp).toLocaleTimeString() +
                                 '</span></td>' +
@@ -885,19 +977,26 @@
                         '<th>Present</th>' +
                         '<th>Type of Work</th>' +
                         '<th>Name</th>' +
-                        '<th>Number of Workers</th>' +
-                        '<th>Daily Rate</th>' +
+                        '<th>Senior Staff</th>' +
+                        '<th>Labour Staff</th>' +
+                        '<th>Total Cost</th>' +
+                        '<th>IOU</th>' +
                         '<th>Time Added</th>' +
                         '<th>Actions</th>' +
                     '</tr>';
 
                 database.ref('Assignments/' + date + '/subContractors').orderByChild('timestamp').once('value', function(snapshot) {
+                    var hasSubContractors = false;
                     snapshot.forEach(function(childSnapshot) {
                         var assignment = childSnapshot.val();
                         if (assignment.siteId === siteId) {
+                            hasSubContractors = true;
                             var scId = childSnapshot.key;
                             var sc = subContractors.find(function(s) { return s.id === scId; });
                             if (sc) {
+                                var totalCost = (assignment.numSeniorStaff * assignment.seniorStaffWage) + 
+                                                (assignment.numLabour * assignment.labourStaffWage);
+
                                 html += '<tr class="' + (assignment.present ? 'present' : 'absent') + '">' +
                                     '<td>' +
                                         '<input type="checkbox" ' +
@@ -906,8 +1005,14 @@
                                     '</td>' +
                                     '<td>' + sc.typeOfWork + '</td>' +
                                     '<td>' + sc.contractorName + '</td>' +
-                                    '<td>' + sc.numOfWorkers + '</td>' +
-                                    '<td>' + formatCurrency(sc.dailyRate) + '</td>' +
+                                    '<td>' +
+                                        assignment.numSeniorStaff + ' x ' + formatCurrency(assignment.seniorStaffWage) +
+                                    '</td>' +
+                                    '<td>' +
+                                        assignment.numLabour + ' x ' + formatCurrency(assignment.labourStaffWage) +
+                                    '</td>' +
+                                    '<td>' + formatCurrency(totalCost) + '</td>' +
+                                    '<td>' + formatCurrency(assignment.iou || 0) + '</td>' +
                                     '<td><span class="timestamp">' +
                                         new Date(assignment.timestamp).toLocaleTimeString() +
                                     '</span></td>' +
@@ -922,13 +1027,205 @@
                     });
 
                     html += '</table>';
+
                     div.innerHTML = html;
                 });
             });
         }
 
         // Report Generation
-        // (You can implement report generation functions here, integrating with Firebase as needed)
+        function showDailyReport() {
+            var date = document.getElementById('currentDate').value;
+            var siteId = document.getElementById('reportSiteSelect').value;
+            if (!date) {
+                alert("Please select a date.");
+                return;
+            }
+
+            var reportArea = document.getElementById('reportArea');
+            reportArea.innerHTML = '<h3>Daily Report for ' + new Date(date).toDateString() + '</h3>';
+
+            generateReport([date], reportArea, siteId);
+        }
+
+        function showWeeklyReport() {
+            var weekInput = document.getElementById('weekSelect').value;
+            var siteId = document.getElementById('reportSiteSelect').value;
+            if (!weekInput) {
+                alert("Please select a week.");
+                return;
+            }
+
+            var [year, week] = weekInput.split('-W');
+            var startDate = getStartDateOfWeek(parseInt(year), parseInt(week));
+            var datesOfWeek = getDatesOfWeek(startDate);
+
+            var reportArea = document.getElementById('reportArea');
+            reportArea.innerHTML = '<h3>Weekly Report for Week ' + week + ', ' + year + '</h3>';
+
+            var dateStrings = datesOfWeek.map(date => {
+                date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+                return date.toISOString().split('T')[0];
+            });
+
+            generateReport(dateStrings, reportArea, siteId);
+        }
+
+        function generateReport(dates, reportArea, filterSiteId) {
+            var totalWorkerWages = 0;
+            var totalWorkerIOU = 0;
+            var totalSubContractorCost = 0;
+            var totalSubContractorIOU = 0;
+
+            var reportHtml = '';
+
+            // Workers Report
+            reportHtml += '<h4>Workers</h4>' +
+                '<table>' +
+                '<tr>' +
+                    '<th>Worker Name</th>' +
+                    '<th>Site</th>' +
+                    '<th>Total Days Present</th>' +
+                    '<th>Total Wages</th>' +
+                    '<th>IOU</th>' +
+                    '<th>Net Payable</th>' +
+                '</tr>';
+
+            var workerData = {};
+
+            // Fetch assignments for each date
+            var promises = dates.map(date => {
+                return database.ref('Assignments/' + date + '/workers').once('value').then(snapshot => {
+                    snapshot.forEach(childSnapshot => {
+                        var assignment = childSnapshot.val();
+                        if (assignment.present && (!filterSiteId || assignment.siteId === filterSiteId)) {
+                            var workerId = childSnapshot.key;
+                            var worker = workers.find(w => w.id === workerId);
+                            var site = sites.find(s => s.id === assignment.siteId);
+                            var siteName = site ? site.siteName : 'Unknown Site';
+                            if (worker) {
+                                var key = workerId + '_' + assignment.siteId;
+                                if (!workerData[key]) {
+                                    workerData[key] = {
+                                        workerName: worker.workerName,
+                                        siteName: siteName,
+                                        dailyWage: worker.dailyWage,
+                                        daysPresent: 0,
+                                        totalWage: 0,
+                                        totalIOU: 0
+                                    };
+                                }
+                                workerData[key].daysPresent += 1;
+                                workerData[key].totalWage += worker.dailyWage;
+                                workerData[key].totalIOU += assignment.iou || 0;
+                            }
+                        }
+                    });
+                });
+            });
+
+            // After all data is fetched
+            Promise.all(promises).then(() => {
+                for (var key in workerData) {
+                    var data = workerData[key];
+                    var netPayable = data.totalWage - data.totalIOU;
+                    totalWorkerWages += data.totalWage;
+                    totalWorkerIOU += data.totalIOU;
+
+                    reportHtml += '<tr>' +
+                        '<td>' + data.workerName + '</td>' +
+                        '<td>' + data.siteName + '</td>' +
+                        '<td>' + data.daysPresent + '</td>' +
+                        '<td>' + formatCurrency(data.totalWage) + '</td>' +
+                        '<td>' + formatCurrency(data.totalIOU) + '</td>' +
+                        '<td>' + formatCurrency(netPayable) + '</td>' +
+                    '</tr>';
+                }
+
+                reportHtml += '<tr class="total-row">' +
+                    '<td colspan="3">Total</td>' +
+                    '<td>' + formatCurrency(totalWorkerWages) + '</td>' +
+                    '<td>' + formatCurrency(totalWorkerIOU) + '</td>' +
+                    '<td>' + formatCurrency(totalWorkerWages - totalWorkerIOU) + '</td>' +
+                '</tr>';
+
+                reportHtml += '</table>';
+
+                // Subcontractors Report
+                reportHtml += '<h4>Sub Contractors</h4>' +
+                    '<table>' +
+                    '<tr>' +
+                        '<th>Contractor Name</th>' +
+                        '<th>Type of Work</th>' +
+                        '<th>Site</th>' +
+                        '<th>Total Cost</th>' +
+                        '<th>IOU</th>' +
+                        '<th>Net Payable</th>' +
+                    '</tr>';
+
+                var subContractorData = {};
+
+                var scPromises = dates.map(date => {
+                    return database.ref('Assignments/' + date + '/subContractors').once('value').then(snapshot => {
+                        snapshot.forEach(childSnapshot => {
+                            var assignment = childSnapshot.val();
+                            if (assignment.present && (!filterSiteId || assignment.siteId === filterSiteId)) {
+                                var scId = childSnapshot.key;
+                                var sc = subContractors.find(s => s.id === scId);
+                                var site = sites.find(s => s.id === assignment.siteId);
+                                var siteName = site ? site.siteName : 'Unknown Site';
+                                if (sc) {
+                                    var totalCost = (assignment.numSeniorStaff * assignment.seniorStaffWage) +
+                                                    (assignment.numLabour * assignment.labourStaffWage);
+
+                                    var key = scId + '_' + assignment.siteId;
+                                    if (!subContractorData[key]) {
+                                        subContractorData[key] = {
+                                            contractorName: sc.contractorName,
+                                            typeOfWork: sc.typeOfWork,
+                                            siteName: siteName,
+                                            totalCost: 0,
+                                            totalIOU: 0
+                                        };
+                                    }
+                                    subContractorData[key].totalCost += totalCost;
+                                    subContractorData[key].totalIOU += assignment.iou || 0;
+                                    totalSubContractorCost += totalCost;
+                                    totalSubContractorIOU += assignment.iou || 0;
+                                }
+                            }
+                        });
+                    });
+                });
+
+                Promise.all(scPromises).then(() => {
+                    for (var key in subContractorData) {
+                        var data = subContractorData[key];
+                        var netPayable = data.totalCost - data.totalIOU;
+                        reportHtml += '<tr>' +
+                            '<td>' + data.contractorName + '</td>' +
+                            '<td>' + data.typeOfWork + '</td>' +
+                            '<td>' + data.siteName + '</td>' +
+                            '<td>' + formatCurrency(data.totalCost) + '</td>' +
+                            '<td>' + formatCurrency(data.totalIOU) + '</td>' +
+                            '<td>' + formatCurrency(netPayable) + '</td>' +
+                        '</tr>';
+                    }
+
+                    reportHtml += '<tr class="total-row">' +
+                        '<td colspan="3">Total</td>' +
+                        '<td>' + formatCurrency(totalSubContractorCost) + '</td>' +
+                        '<td>' + formatCurrency(totalSubContractorIOU) + '</td>' +
+                        '<td>' + formatCurrency(totalSubContractorCost - totalSubContractorIOU) + '</td>' +
+                    '</tr>';
+
+                    reportHtml += '</table>';
+
+                    // Display the report
+                    reportArea.innerHTML += reportHtml;
+                });
+            });
+        }
 
         // Helper Functions for Weekly Report
         function getStartDateOfWeek(year, week) {

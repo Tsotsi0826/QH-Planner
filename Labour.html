@@ -338,6 +338,10 @@
                 </select>
             </div>
             <div class="control-item">
+                <label>Select Date:</label>
+                <input type="date" id="reportDateSelect">
+            </div>
+            <div class="control-item">
                 <label>Select Week:</label>
                 <input type="week" id="weekSelect">
             </div>
@@ -350,7 +354,7 @@
 
     <!-- JavaScript Code -->
     <script>
-        // Firebase configuration
+       // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyD82WxYqaYASCiTmcBd7nHHZMTsAJSZkIc",
             authDomain: "qh-planner.firebaseapp.com",
@@ -369,18 +373,34 @@
         var sites = [];
         var workers = [];
         var subContractors = [];
+        var dataLoaded = {
+            sites: false,
+            workers: false,
+            subContractors: false
+        };
 
         // Initialize the page
         function initializePage() {
-            // Set the date input to today's date in the local time zone
+            // Set the date inputs to today's date in the local time zone
             var today = new Date();
             today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
-            document.getElementById('currentDate').value = today.toISOString().split('T')[0];
+            var todayDateStr = today.toISOString().split('T')[0];
+            document.getElementById('currentDate').value = todayDateStr;
+            document.getElementById('reportDateSelect').value = todayDateStr; // Initialize report date
             document.getElementById('weekSelect').value = getCurrentWeek();
             fetchSites();
             fetchWorkers();
             fetchSubContractors();
             handleDateChange(); // Ensure the page initializes correctly
+
+            // Clear report area when date or week changes
+            document.getElementById('reportDateSelect').addEventListener('change', function() {
+                document.getElementById('reportArea').innerHTML = '';
+            });
+
+            document.getElementById('weekSelect').addEventListener('change', function() {
+                document.getElementById('reportArea').innerHTML = '';
+            });
         }
 
         // Call initializePage when the window loads
@@ -407,6 +427,7 @@
                     site.id = childSnapshot.key;
                     sites.push(site);
                 });
+                dataLoaded.sites = true;
                 updateSitesList();
                 updateSiteSelect();
                 updateReportSiteSelect(); // Update report site select
@@ -509,6 +530,7 @@
                     worker.id = childSnapshot.key;
                     workers.push(worker);
                 });
+                dataLoaded.workers = true;
                 updateWorkersList();
                 updateWorkerSelect();
             });
@@ -642,6 +664,7 @@
                     sc.id = childSnapshot.key;
                     subContractors.push(sc);
                 });
+                dataLoaded.subContractors = true;
                 updateSubContractorsList();
                 updateSubContractorSelect();
             });
@@ -959,6 +982,7 @@
                                     new Date(assignment.timestamp).toLocaleTimeString() +
                                 '</span></td>' +
                                 '<td>' +
+                                    '<button class="edit-btn" onclick="editAssignment(\'' + date + '\', \'' + worker.id + '\', true)">Edit</button>' +
                                     '<button class="delete-btn" onclick="removeAssignment(\'' + worker.id + '\', true)">' +
                                         'Remove' +
                                     '</button>' +
@@ -1017,6 +1041,7 @@
                                         new Date(assignment.timestamp).toLocaleTimeString() +
                                     '</span></td>' +
                                     '<td>' +
+                                        '<button class="edit-btn" onclick="editAssignment(\'' + date + '\', \'' + sc.id + '\', false)">Edit</button>' +
                                         '<button class="delete-btn" onclick="removeAssignment(\'' + sc.id + '\', false)">' +
                                             'Remove' +
                                         '</button>' +
@@ -1033,9 +1058,98 @@
             });
         }
 
+        // Function to edit assignments from the report or current assignments
+        function editAssignment(date, id, isWorker) {
+            var category = isWorker ? 'workers' : 'subContractors';
+            var assignmentRef = database.ref('Assignments/' + date + '/' + category + '/' + id);
+
+            assignmentRef.once('value').then(function(snapshot) {
+                var assignment = snapshot.val();
+                if (!assignment) {
+                    alert("Assignment not found.");
+                    return;
+                }
+
+                if (isWorker) {
+                    // Edit worker assignment
+                    var present = confirm("Is the worker present? Click 'OK' for Yes, 'Cancel' for No.");
+                    var iouAmount = prompt("Enter IOU amount for this worker in Rand (R):", assignment.iou || "0");
+                    iouAmount = parseFloat(iouAmount);
+                    if (isNaN(iouAmount) || iouAmount < 0) {
+                        alert("Invalid IOU amount.");
+                        return;
+                    }
+
+                    assignmentRef.update({
+                        present: present,
+                        iou: iouAmount
+                    })
+                    .then(() => {
+                        alert("Assignment updated successfully.");
+                        updateCurrentAssignments();
+                        updateWorkerSelect();
+                    })
+                    .catch(error => console.error("Error updating assignment:", error));
+
+                } else {
+                    // Edit subcontractor assignment
+                    var present = confirm("Is the subcontractor present? Click 'OK' for Yes, 'Cancel' for No.");
+                    var numSeniorStaff = prompt("Enter number of Senior Staff:", assignment.numSeniorStaff);
+                    numSeniorStaff = parseInt(numSeniorStaff);
+                    if (isNaN(numSeniorStaff) || numSeniorStaff < 0) {
+                        alert("Invalid number of Senior Staff.");
+                        return;
+                    }
+
+                    var seniorStaffWage = prompt("Enter wage per Senior Staff in Rand (R):", assignment.seniorStaffWage);
+                    seniorStaffWage = parseFloat(seniorStaffWage);
+                    if (isNaN(seniorStaffWage) || seniorStaffWage < 0) {
+                        alert("Invalid Senior Staff wage.");
+                        return;
+                    }
+
+                    var numLabour = prompt("Enter number of Labour Staff:", assignment.numLabour);
+                    numLabour = parseInt(numLabour);
+                    if (isNaN(numLabour) || numLabour < 0) {
+                        alert("Invalid number of Labour Staff.");
+                        return;
+                    }
+
+                    var labourStaffWage = prompt("Enter wage per Labour Staff in Rand (R):", assignment.labourStaffWage);
+                    labourStaffWage = parseFloat(labourStaffWage);
+                    if (isNaN(labourStaffWage) || labourStaffWage < 0) {
+                        alert("Invalid Labour Staff wage.");
+                        return;
+                    }
+
+                    var iouAmount = prompt("Enter IOU amount for this subcontractor in Rand (R):", assignment.iou || "0");
+                    iouAmount = parseFloat(iouAmount);
+                    if (isNaN(iouAmount) || iouAmount < 0) {
+                        alert("Invalid IOU amount.");
+                        return;
+                    }
+
+                    assignmentRef.update({
+                        present: present,
+                        numSeniorStaff: numSeniorStaff,
+                        seniorStaffWage: seniorStaffWage,
+                        numLabour: numLabour,
+                        labourStaffWage: labourStaffWage,
+                        iou: iouAmount
+                    })
+                    .then(() => {
+                        alert("Assignment updated successfully.");
+                        updateCurrentAssignments();
+                        updateSubContractorSelect();
+                    })
+                    .catch(error => console.error("Error updating assignment:", error));
+                }
+            });
+        }
+
         // Report Generation
         function showDailyReport() {
-            var date = document.getElementById('currentDate').value;
+            var date = document.getElementById('reportDateSelect').value; // Use report date input
             var siteId = document.getElementById('reportSiteSelect').value;
             if (!date) {
                 alert("Please select a date.");
@@ -1045,7 +1159,18 @@
             var reportArea = document.getElementById('reportArea');
             reportArea.innerHTML = '<h3>Daily Report for ' + new Date(date).toDateString() + '</h3>';
 
-            generateReport([date], reportArea, siteId);
+            // Ensure all data is loaded before generating the report
+            if (dataLoaded.sites && dataLoaded.workers && dataLoaded.subContractors) {
+                generateReport([date], reportArea, siteId);
+            } else {
+                // Wait until data is loaded
+                var checkDataLoaded = setInterval(function() {
+                    if (dataLoaded.sites && dataLoaded.workers && dataLoaded.subContractors) {
+                        clearInterval(checkDataLoaded);
+                        generateReport([date], reportArea, siteId);
+                    }
+                }, 100);
+            }
         }
 
         function showWeeklyReport() {
@@ -1068,7 +1193,18 @@
                 return date.toISOString().split('T')[0];
             });
 
-            generateReport(dateStrings, reportArea, siteId);
+            // Ensure all data is loaded before generating the report
+            if (dataLoaded.sites && dataLoaded.workers && dataLoaded.subContractors) {
+                generateReport(dateStrings, reportArea, siteId);
+            } else {
+                // Wait until data is loaded
+                var checkDataLoaded = setInterval(function() {
+                    if (dataLoaded.sites && dataLoaded.workers && dataLoaded.subContractors) {
+                        clearInterval(checkDataLoaded);
+                        generateReport(dateStrings, reportArea, siteId);
+                    }
+                }, 100);
+            }
         }
 
         function generateReport(dates, reportArea, filterSiteId) {
@@ -1089,6 +1225,7 @@
                     '<th>Total Wages</th>' +
                     '<th>IOU</th>' +
                     '<th>Net Payable</th>' +
+                    '<th>Actions</th>' +
                 '</tr>';
 
             var workerData = {};
@@ -1096,7 +1233,7 @@
             // Fetch assignments for each date
             var promises = dates.map(date => {
                 return database.ref('Assignments/' + date + '/workers').once('value').then(snapshot => {
-                    snapshot.forEach(childSnapshot => {
+                    snapshot.forEach(function(childSnapshot) {
                         var assignment = childSnapshot.val();
                         if (assignment.present && (!filterSiteId || assignment.siteId === filterSiteId)) {
                             var workerId = childSnapshot.key;
@@ -1107,6 +1244,8 @@
                                 var key = workerId + '_' + assignment.siteId;
                                 if (!workerData[key]) {
                                     workerData[key] = {
+                                        workerId: workerId,
+                                        date: date,
                                         workerName: worker.workerName,
                                         siteName: siteName,
                                         dailyWage: worker.dailyWage,
@@ -1139,6 +1278,10 @@
                         '<td>' + formatCurrency(data.totalWage) + '</td>' +
                         '<td>' + formatCurrency(data.totalIOU) + '</td>' +
                         '<td>' + formatCurrency(netPayable) + '</td>' +
+                        '<td>' +
+                            '<button class="edit-btn" onclick="editReportAssignment(\'' + data.date + '\', \'' + data.workerId + '\', true)">Edit</button>' +
+                            '<button class="delete-btn" onclick="deleteReportAssignment(\'' + data.date + '\', \'' + data.workerId + '\', true)">Delete</button>' +
+                        '</td>' +
                     '</tr>';
                 }
 
@@ -1147,6 +1290,7 @@
                     '<td>' + formatCurrency(totalWorkerWages) + '</td>' +
                     '<td>' + formatCurrency(totalWorkerIOU) + '</td>' +
                     '<td>' + formatCurrency(totalWorkerWages - totalWorkerIOU) + '</td>' +
+                    '<td></td>' +
                 '</tr>';
 
                 reportHtml += '</table>';
@@ -1161,13 +1305,14 @@
                         '<th>Total Cost</th>' +
                         '<th>IOU</th>' +
                         '<th>Net Payable</th>' +
+                        '<th>Actions</th>' +
                     '</tr>';
 
                 var subContractorData = {};
 
                 var scPromises = dates.map(date => {
                     return database.ref('Assignments/' + date + '/subContractors').once('value').then(snapshot => {
-                        snapshot.forEach(childSnapshot => {
+                        snapshot.forEach(function(childSnapshot) {
                             var assignment = childSnapshot.val();
                             if (assignment.present && (!filterSiteId || assignment.siteId === filterSiteId)) {
                                 var scId = childSnapshot.key;
@@ -1181,6 +1326,8 @@
                                     var key = scId + '_' + assignment.siteId;
                                     if (!subContractorData[key]) {
                                         subContractorData[key] = {
+                                            scId: scId,
+                                            date: date,
                                             contractorName: sc.contractorName,
                                             typeOfWork: sc.typeOfWork,
                                             siteName: siteName,
@@ -1209,6 +1356,10 @@
                             '<td>' + formatCurrency(data.totalCost) + '</td>' +
                             '<td>' + formatCurrency(data.totalIOU) + '</td>' +
                             '<td>' + formatCurrency(netPayable) + '</td>' +
+                            '<td>' +
+                                '<button class="edit-btn" onclick="editReportAssignment(\'' + data.date + '\', \'' + data.scId + '\', false)">Edit</button>' +
+                                '<button class="delete-btn" onclick="deleteReportAssignment(\'' + data.date + '\', \'' + data.scId + '\', false)">Delete</button>' +
+                            '</td>' +
                         '</tr>';
                     }
 
@@ -1217,6 +1368,7 @@
                         '<td>' + formatCurrency(totalSubContractorCost) + '</td>' +
                         '<td>' + formatCurrency(totalSubContractorIOU) + '</td>' +
                         '<td>' + formatCurrency(totalSubContractorCost - totalSubContractorIOU) + '</td>' +
+                        '<td></td>' +
                     '</tr>';
 
                     reportHtml += '</table>';
@@ -1225,6 +1377,23 @@
                     reportArea.innerHTML += reportHtml;
                 });
             });
+        }
+
+        // Functions to edit and delete assignments from the report
+        function editReportAssignment(date, id, isWorker) {
+            editAssignment(date, id, isWorker);
+        }
+
+        function deleteReportAssignment(date, id, isWorker) {
+            if (!confirm("Are you sure you want to delete this assignment?")) return;
+
+            var category = isWorker ? 'workers' : 'subContractors';
+            database.ref('Assignments/' + date + '/' + category + '/' + id).remove()
+            .then(() => {
+                alert("Assignment deleted successfully.");
+                showDailyReport(); // Refresh the report
+            })
+            .catch(error => console.error("Error deleting assignment:", error));
         }
 
         // Helper Functions for Weekly Report

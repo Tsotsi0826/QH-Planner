@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Construction Labor Management System</title>
     <style>
-        /* Existing CSS styles here */
+        /* CSS Styles */
         body { 
             font-family: Arial, sans-serif; 
             padding: 20px; 
@@ -221,6 +221,8 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <!-- SheetJS Library for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <!-- Top Navigation with Home Icon -->
@@ -354,7 +356,7 @@
 
     <!-- JavaScript Code -->
     <script>
-       // Firebase configuration
+         // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyD82WxYqaYASCiTmcBd7nHHZMTsAJSZkIc",
             authDomain: "qh-planner.firebaseapp.com",
@@ -1217,7 +1219,7 @@
 
             // Workers Report
             reportHtml += '<h4>Workers</h4>' +
-                '<table>' +
+                '<table id="workersReportTable">' +
                 '<tr>' +
                     '<th>Worker Name</th>' +
                     '<th>Site</th>' +
@@ -1263,8 +1265,16 @@
                 });
             });
 
-            // After all data is fetched
-            Promise.all(promises).then(() => {
+            var scPromises = dates.map(date => {
+                return database.ref('Assignments/' + date + '/subContractors').once('value').then(snapshot => {
+                    // Subcontractors data will be processed later
+                    return { date: date, snapshot: snapshot };
+                });
+            });
+
+            // Wait for both workers and subcontractors data to be fetched
+            Promise.all(promises.concat(scPromises)).then(results => {
+                // Process worker data
                 for (var key in workerData) {
                     var data = workerData[key];
                     var netPayable = data.totalWage - data.totalIOU;
@@ -1297,7 +1307,7 @@
 
                 // Subcontractors Report
                 reportHtml += '<h4>Sub Contractors</h4>' +
-                    '<table>' +
+                    '<table id="subContractorsReportTable">' +
                     '<tr>' +
                         '<th>Contractor Name</th>' +
                         '<th>Type of Work</th>' +
@@ -1310,72 +1320,74 @@
 
                 var subContractorData = {};
 
-                var scPromises = dates.map(date => {
-                    return database.ref('Assignments/' + date + '/subContractors').once('value').then(snapshot => {
-                        snapshot.forEach(function(childSnapshot) {
-                            var assignment = childSnapshot.val();
-                            if (assignment.present && (!filterSiteId || assignment.siteId === filterSiteId)) {
-                                var scId = childSnapshot.key;
-                                var sc = subContractors.find(s => s.id === scId);
-                                var site = sites.find(s => s.id === assignment.siteId);
-                                var siteName = site ? site.siteName : 'Unknown Site';
-                                if (sc) {
-                                    var totalCost = (assignment.numSeniorStaff * assignment.seniorStaffWage) +
-                                                    (assignment.numLabour * assignment.labourStaffWage);
+                // Process subcontractor data
+                results.slice(promises.length).forEach(result => {
+                    var date = result.date;
+                    var snapshot = result.snapshot;
+                    snapshot.forEach(function(childSnapshot) {
+                        var assignment = childSnapshot.val();
+                        if (assignment.present && (!filterSiteId || assignment.siteId === filterSiteId)) {
+                            var scId = childSnapshot.key;
+                            var sc = subContractors.find(s => s.id === scId);
+                            var site = sites.find(s => s.id === assignment.siteId);
+                            var siteName = site ? site.siteName : 'Unknown Site';
+                            if (sc) {
+                                var totalCost = (assignment.numSeniorStaff * assignment.seniorStaffWage) +
+                                                (assignment.numLabour * assignment.labourStaffWage);
 
-                                    var key = scId + '_' + assignment.siteId;
-                                    if (!subContractorData[key]) {
-                                        subContractorData[key] = {
-                                            scId: scId,
-                                            date: date,
-                                            contractorName: sc.contractorName,
-                                            typeOfWork: sc.typeOfWork,
-                                            siteName: siteName,
-                                            totalCost: 0,
-                                            totalIOU: 0
-                                        };
-                                    }
-                                    subContractorData[key].totalCost += totalCost;
-                                    subContractorData[key].totalIOU += assignment.iou || 0;
-                                    totalSubContractorCost += totalCost;
-                                    totalSubContractorIOU += assignment.iou || 0;
+                                var key = scId + '_' + assignment.siteId;
+                                if (!subContractorData[key]) {
+                                    subContractorData[key] = {
+                                        scId: scId,
+                                        date: date,
+                                        contractorName: sc.contractorName,
+                                        typeOfWork: sc.typeOfWork,
+                                        siteName: siteName,
+                                        totalCost: 0,
+                                        totalIOU: 0
+                                    };
                                 }
+                                subContractorData[key].totalCost += totalCost;
+                                subContractorData[key].totalIOU += assignment.iou || 0;
+                                totalSubContractorCost += totalCost;
+                                totalSubContractorIOU += assignment.iou || 0;
                             }
-                        });
+                        }
                     });
                 });
 
-                Promise.all(scPromises).then(() => {
-                    for (var key in subContractorData) {
-                        var data = subContractorData[key];
-                        var netPayable = data.totalCost - data.totalIOU;
-                        reportHtml += '<tr>' +
-                            '<td>' + data.contractorName + '</td>' +
-                            '<td>' + data.typeOfWork + '</td>' +
-                            '<td>' + data.siteName + '</td>' +
-                            '<td>' + formatCurrency(data.totalCost) + '</td>' +
-                            '<td>' + formatCurrency(data.totalIOU) + '</td>' +
-                            '<td>' + formatCurrency(netPayable) + '</td>' +
-                            '<td>' +
-                                '<button class="edit-btn" onclick="editReportAssignment(\'' + data.date + '\', \'' + data.scId + '\', false)">Edit</button>' +
-                                '<button class="delete-btn" onclick="deleteReportAssignment(\'' + data.date + '\', \'' + data.scId + '\', false)">Delete</button>' +
-                            '</td>' +
-                        '</tr>';
-                    }
-
-                    reportHtml += '<tr class="total-row">' +
-                        '<td colspan="3">Total</td>' +
-                        '<td>' + formatCurrency(totalSubContractorCost) + '</td>' +
-                        '<td>' + formatCurrency(totalSubContractorIOU) + '</td>' +
-                        '<td>' + formatCurrency(totalSubContractorCost - totalSubContractorIOU) + '</td>' +
-                        '<td></td>' +
+                for (var key in subContractorData) {
+                    var data = subContractorData[key];
+                    var netPayable = data.totalCost - data.totalIOU;
+                    reportHtml += '<tr>' +
+                        '<td>' + data.contractorName + '</td>' +
+                        '<td>' + data.typeOfWork + '</td>' +
+                        '<td>' + data.siteName + '</td>' +
+                        '<td>' + formatCurrency(data.totalCost) + '</td>' +
+                        '<td>' + formatCurrency(data.totalIOU) + '</td>' +
+                        '<td>' + formatCurrency(netPayable) + '</td>' +
+                        '<td>' +
+                            '<button class="edit-btn" onclick="editReportAssignment(\'' + data.date + '\', \'' + data.scId + '\', false)">Edit</button>' +
+                            '<button class="delete-btn" onclick="deleteReportAssignment(\'' + data.date + '\', \'' + data.scId + '\', false)">Delete</button>' +
+                        '</td>' +
                     '</tr>';
+                }
 
-                    reportHtml += '</table>';
+                reportHtml += '<tr class="total-row">' +
+                    '<td colspan="3">Total</td>' +
+                    '<td>' + formatCurrency(totalSubContractorCost) + '</td>' +
+                    '<td>' + formatCurrency(totalSubContractorIOU) + '</td>' +
+                    '<td>' + formatCurrency(totalSubContractorCost - totalSubContractorIOU) + '</td>' +
+                    '<td></td>' +
+                '</tr>';
 
-                    // Display the report
-                    reportArea.innerHTML += reportHtml;
-                });
+                reportHtml += '</table>';
+
+                // Add Export to Excel Button
+                reportHtml += '<button class="primary-btn" onclick="exportReportToExcel()">Export Report to Excel</button>';
+
+                // Display the report
+                reportArea.innerHTML += reportHtml;
             });
         }
 
@@ -1394,6 +1406,70 @@
                 showDailyReport(); // Refresh the report
             })
             .catch(error => console.error("Error deleting assignment:", error));
+        }
+
+        // Updated Export Report to Excel Function
+        function exportReportToExcel() {
+            // Create a new workbook
+            var wb = XLSX.utils.book_new();
+
+            // Get the reportArea element
+            var reportArea = document.getElementById('reportArea');
+
+            // Workers Data
+            var workersSheetData = [
+                ['Worker Name', 'Site', 'Total Days Present', 'Total Wages', 'IOU', 'Net Payable']
+            ];
+
+            var workerRows = reportArea.querySelectorAll('#workersReportTable tr');
+            for (var i = 1; i < workerRows.length; i++) { // Start after header row
+                var cells = workerRows[i].querySelectorAll('td');
+                // Skip total row
+                if (cells[0].innerText.trim() === 'Total') {
+                    continue;
+                }
+                workersSheetData.push([
+                    cells[0].innerText, // Worker Name
+                    cells[1].innerText, // Site
+                    cells[2].innerText, // Total Days Present
+                    cells[3].innerText.replace('R', ''), // Total Wages
+                    cells[4].innerText.replace('R', ''), // IOU
+                    cells[5].innerText.replace('R', '')  // Net Payable
+                ]);
+            }
+
+            // Add Workers Sheet
+            var ws1 = XLSX.utils.aoa_to_sheet(workersSheetData);
+            XLSX.utils.book_append_sheet(wb, ws1, 'Workers');
+
+            // Sub Contractors Data
+            var subContractorsSheetData = [
+                ['Contractor Name', 'Type of Work', 'Site', 'Total Cost', 'IOU', 'Net Payable']
+            ];
+
+            var scRows = reportArea.querySelectorAll('#subContractorsReportTable tr');
+            for (var i = 1; i < scRows.length; i++) { // Start after header row
+                var cells = scRows[i].querySelectorAll('td');
+                // Skip total row
+                if (cells[0].innerText.trim() === 'Total') {
+                    continue;
+                }
+                subContractorsSheetData.push([
+                    cells[0].innerText, // Contractor Name
+                    cells[1].innerText, // Type of Work
+                    cells[2].innerText, // Site
+                    cells[3].innerText.replace('R', ''), // Total Cost
+                    cells[4].innerText.replace('R', ''), // IOU
+                    cells[5].innerText.replace('R', '')  // Net Payable
+                ]);
+            }
+
+            // Add Sub Contractors Sheet
+            var ws2 = XLSX.utils.aoa_to_sheet(subContractorsSheetData);
+            XLSX.utils.book_append_sheet(wb, ws2, 'Sub Contractors');
+
+            // Export to Excel
+            XLSX.writeFile(wb, 'Report.xlsx');
         }
 
         // Helper Functions for Weekly Report
